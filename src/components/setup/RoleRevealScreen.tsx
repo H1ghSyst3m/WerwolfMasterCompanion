@@ -1,7 +1,8 @@
 import { useState, useRef, useCallback } from "react";
 import { getRoleDisplay } from "../../domain/roleDisplay";
 import { Btn } from "../ui/Btn";
-import type { Player } from "../../types";
+import { RoleInfoModal } from "../ui/RoleInfoModal";
+import type { Player, RoleId } from "../../types";
 
 interface RoleRevealScreenProps {
   players: Player[];
@@ -9,6 +10,8 @@ interface RoleRevealScreenProps {
   title?: string;
   instructionText?: string;
   doneLabel?: string;
+  showRoleInfo?: boolean;
+  showRoleInfoIdentity?: boolean;
 }
 
 const DRAG_THRESHOLD = 128;
@@ -20,12 +23,15 @@ export function RoleRevealScreen({
   title = "🐺 Rollenaufdeckung",
   instructionText,
   doneLabel,
+  showRoleInfo = false,
+  showRoleInfoIdentity = true,
 }: RoleRevealScreenProps) {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isSettling, setIsSettling] = useState(false);
   const [hasRevealed, setHasRevealed] = useState(false);
+  const [roleInfoId, setRoleInfoId] = useState<RoleId | null>(null);
 
   const startYRef = useRef(0);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -82,6 +88,7 @@ export function RoleRevealScreen({
       settlingRef.current = false;
       setIsSettling(false);
       setHasRevealed(false);
+      setRoleInfoId(null);
     }
   }, [isDragging, isSettling, hasRevealed, isLast, onDone]);
 
@@ -101,6 +108,7 @@ export function RoleRevealScreen({
   const defaultInstructionText = players.length === 1
     ? "Zeige deine Rolle"
     : `Gib das Gerät an ${currentPlayer.name} weiter`;
+  const roleInfoAvailable = showRoleInfo && hasRevealed && currentPlayer.role !== null;
 
   // Card translates upward; capped so it doesn't fully leave the screen
   const translateY = Math.min(dragOffset, MAX_DRAG);
@@ -197,19 +205,48 @@ export function RoleRevealScreen({
               <p className="text-purple-300 text-xs leading-snug">↑ Hochziehen / Leertaste</p>
             </div>
           </div>
+
         </div>
       </main>
 
       {/* Sticky footer: next button, hint, and counter */}
       <footer className="sticky bottom-0 bg-indigo-950/90 backdrop-blur border-t border-white/10 px-4 py-4 flex flex-col items-center gap-2">
-        <Btn
-          onClick={handleNext}
-          disabled={isDragging || isSettling || !hasRevealed}
-          cls="bg-purple-600 hover:bg-purple-500 text-white w-64"
-          size="lg"
-        >
-          {isLast ? doneLabel ?? "Spiel starten →" : "Weiter →"}
-        </Btn>
+        {showRoleInfo ? (
+          <div className="flex w-full max-w-xs items-center justify-center gap-2">
+            <Btn
+              onClick={handleNext}
+              disabled={isDragging || isSettling || !hasRevealed}
+              cls="bg-purple-600 hover:bg-purple-500 text-white flex-1 min-w-0"
+              size="lg"
+            >
+              {isLast ? doneLabel ?? "Spiel starten →" : "Weiter →"}
+            </Btn>
+            <button
+              type="button"
+              onClick={() => {
+                if (currentPlayer.role) setRoleInfoId(currentPlayer.role);
+              }}
+              disabled={!roleInfoAvailable}
+              aria-hidden={!roleInfoAvailable}
+              tabIndex={roleInfoAvailable ? 0 : -1}
+              aria-label="Rollenbeschreibung anzeigen"
+              className={`w-12 h-12 rounded-xl border border-white/20 bg-gray-800 hover:bg-gray-700 text-lg transition-all active:scale-95 disabled:pointer-events-none ${
+                roleInfoAvailable ? "opacity-100" : "invisible"
+              }`}
+            >
+              ℹ️
+            </button>
+          </div>
+        ) : (
+          <Btn
+            onClick={handleNext}
+            disabled={isDragging || isSettling || !hasRevealed}
+            cls="bg-purple-600 hover:bg-purple-500 text-white w-64"
+            size="lg"
+          >
+            {isLast ? doneLabel ?? "Spiel starten →" : "Weiter →"}
+          </Btn>
+        )}
 
         <p className={`text-gray-500 text-xs text-center ${hasRevealed ? "invisible" : "visible"}`}>
           Karte hochziehen um fortzufahren
@@ -219,6 +256,13 @@ export function RoleRevealScreen({
         <p className="text-gray-700 text-xs text-center">Spieler {currentIdx + 1} von {players.length}</p>
       </footer>
 
+      {roleInfoId && (
+        <RoleInfoModal
+          roleId={roleInfoId}
+          onClose={() => setRoleInfoId(null)}
+          showRoleIdentity={showRoleInfoIdentity}
+        />
+      )}
     </div>
   );
 }
