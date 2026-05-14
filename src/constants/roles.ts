@@ -1,0 +1,118 @@
+import type { Role, RoleId } from "../types";
+
+export const ROLES: Record<RoleId, Role> = {
+  werwolf: {
+    name: "Werwolf",
+    icon: "🐺",
+    team: "wolf",
+    cat: "classic",
+    desc: "Wacht jede Nacht mit den anderen Werwölfen auf. Gemeinsam wählen sie ein Opfer, das gefressen wird.",
+  },
+  dorfbewohner: {
+    name: "Dorfbewohner",
+    icon: "🏘️",
+    team: "village",
+    cat: "classic",
+    desc: "Keine besonderen Fähigkeiten. Versucht durch Beobachtung und Diskussion die Werwölfe zu entlarven.",
+  },
+  seher: {
+    name: "Seher",
+    icon: "👁️",
+    team: "village",
+    cat: "classic",
+    unique: true,
+    desc: "Wacht jede Nacht auf und darf die genaue Rolle eines Mitspielers erfahren.",
+  },
+  hexe: {
+    name: "Hexe",
+    icon: "🧪",
+    team: "village",
+    cat: "classic",
+    unique: true,
+    desc: "Besitzt einen Heiltrank (rettet das Werwolf-Opfer) und einen Gifttrank (tötet einen Spieler). Jeder Trank ist nur einmal einsetzbar.",
+  },
+  jaeger: {
+    name: "Jäger",
+    icon: "🎯",
+    team: "village",
+    cat: "classic",
+    unique: true,
+    desc: "Wenn der Jäger stirbt (Tag oder Nacht), darf er einen letzten Schuss abgeben und einen beliebigen Spieler mitnehmen oder verzichten.",
+  },
+  amor: {
+    name: "Amor",
+    icon: "💘",
+    team: "village",
+    cat: "classic",
+    unique: true,
+    desc: "Wählt in der ersten Nacht zwei Spieler als Liebespaar. Stirbt einer der Liebenden, stirbt der andere an gebrochenem Herzen. Sind nur noch die Liebenden übrig, gewinnen sie gemeinsam.",
+  },
+  narr: {
+    name: "Narr",
+    icon: "🃏",
+    team: "village",
+    cat: "special",
+    unique: true,
+    desc: "Gewinnt sofort, wenn er bei einer Tagesabstimmung hingerichtet wird. Sein Ziel ist es, sich verdächtig zu machen und gelyncht zu werden.",
+  },
+  dorftrottel: {
+    name: "Dorftrottel",
+    icon: "🤡",
+    team: "village",
+    cat: "special",
+    unique: true,
+    desc: "Gewinnt nur, wenn er in der ersten Tagesabstimmung (Runde 1) hingerichtet wird. Überlebt er Runde 1, wird er zum normalen Dorfbewohner.",
+  },
+  auraseher: {
+    name: "Aura-Seher",
+    icon: "🔮",
+    team: "village",
+    cat: "special",
+    unique: true,
+    desc: "Wacht jede Nacht auf und wählt einen Spieler. Erfährt nur, ob dieser Spieler gut oder böse ist, nicht die genaue Rolle.",
+  },
+  detektiv: {
+    name: "Detektiv",
+    icon: "🔍",
+    team: "village",
+    cat: "special",
+    unique: true,
+    desc: "Wacht jede Nacht auf und wählt zwei Spieler. Erfährt ob sie zum gleichen Team gehören oder in verschiedenen Teams sind.",
+  },
+  urwolf: {
+    name: "Urwolf",
+    icon: "🐺",
+    team: "wolf",
+    cat: "special",
+    unique: true,
+    desc: "Wacht jede Nacht nach den Werwölfen auf. Kann einmalig im Spiel das Werwolf-Opfer in einen Werwolf verwandeln statt es zu töten. Das Opfer wechselt die Seite.",
+  },
+  nachtgast: {
+    name: "Nachtgast",
+    icon: "🛏️",
+    team: "village",
+    cat: "special",
+    unique: true,
+    desc: "Wacht jede Nacht vor den Werwölfen auf und übernachtet bei einem anderen Spieler. Beeinflusst nur Angriffe der Werwölfe: Zuhause ist der Nachtgast nicht zu finden, beim besuchten Opfer wird er mitgetroffen.",
+  },
+  beschuetzer: {
+    name: "Beschützer",
+    icon: "🛡️",
+    team: "village",
+    cat: "special",
+    unique: true,
+    desc: "Wacht jede Nacht vor den Werwölfen auf und schützt einen anderen lebenden Spieler vor dem Werwolf-Angriff. Derselbe Spieler darf nicht zwei Nächte nacheinander geschützt werden.",
+  },
+  verfluchter: {
+    name: "Verfluchter",
+    icon: "⛓️",
+    team: "village",
+    cat: "special",
+    unique: true,
+    desc: "Startet auf der Seite des Dorfes. Wird er von den Werwölfen angegriffen, stirbt er nicht, sondern wird heimlich zum Werwolf.",
+  },
+};
+
+export const ROLE_IDS = Object.keys(ROLES) as RoleId[];
+
+export const ROLE_ID_SET = new Set<RoleId>(ROLE_IDS);
