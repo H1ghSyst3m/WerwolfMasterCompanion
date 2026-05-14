@@ -7,7 +7,7 @@ Werwolf Master Companion is a mobile-first game-master assistant for the social 
 The app has two modes:
 
 - **Local Mode:** one-device GM flow backed by React state and `localStorage`.
-- **Online Mode:** websocket-backed rooms where the server is the source of truth. The GM uses the same mode-aware screens as Local Mode, while players use a lightweight phone UI for join, lobby, role reveal, and private role card access.
+- **Online Mode:** websocket-backed rooms where the server is the source of truth. The GM uses the same mode-aware screens as Local Mode, while players use a lightweight phone UI for join, lobby, role reveal, private role card access, and private role descriptions.
 
 Online Mode is v1 in-memory infrastructure: rooms and reconnect sessions survive while the Node process is running, but are lost on process restart.
 
@@ -86,13 +86,14 @@ src/
 └── components/
     ├── ui/
     │   ├── Modal.tsx           # Overlay modal wrapper
+    │   ├── RoleInfoModal.tsx   # Shared role description modal
     │   ├── Btn.tsx             # Styled button primitive
     │   └── PlayerChip.tsx      # Player row / selectable chip
     │
     ├── online/
     │   ├── OnlineHome.tsx      # Create/join/resume Online Mode entry screen
     │   ├── OnlineLobby.tsx     # GM lobby with room code, QR link, kick, transfer
-    │   ├── OnlinePlayerView.tsx # Player-only join/wait/reveal/private role card view
+    │   ├── OnlinePlayerView.tsx # Player-only join/wait/reveal/private role card + info view
     │   └── RoomJoinQr.tsx      # QR code + join link generation/copy UI
     │
     ├── setup/
@@ -172,7 +173,7 @@ Node server
         └── broadcasts role-filtered snapshots
 ```
 
-The GM frontend is not duplicated. `OnlineGmController` renders the same setup, assignment, night/day, game-over, and overlay components using server snapshots. Player phones use separate lightweight UI because they only need join/lobby/role reveal/private role card flows.
+The GM frontend is not duplicated. `OnlineGmController` renders the same setup, assignment, night/day, game-over, and overlay components using server snapshots. Player phones use separate lightweight UI because they only need join/lobby/role reveal/private role card and role-info flows.
 
 ---
 

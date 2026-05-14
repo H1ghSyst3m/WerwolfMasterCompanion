@@ -234,12 +234,12 @@ The server sends role-filtered snapshots:
 
 - GM snapshots include full room/game state and all player roles.
 - Player snapshots include lobby status, the player's own record, reveal status, player list, and winner.
-- Player roles are shown only when appropriate, and after reveal are accessed through the private role-card button.
+- Player roles are shown only when appropriate, and after reveal are accessed through private role-card and role-info buttons.
 
 ### Online Controllers
 
 - `OnlineGmController` renders shared GM screens from server snapshots and sends GM commands.
-- `OnlinePlayerView` renders player-only lobby, role reveal, private role card, and room switching.
+- `OnlinePlayerView` renders player-only lobby, role reveal, private role card, private role description, and room switching.
 - `OnlineLobby` renders room code, QR/join link, kick, and GM transfer tools.
 
 ---

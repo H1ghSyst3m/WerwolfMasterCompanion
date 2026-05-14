@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { ROLES } from "../../constants/roles";
 import { Btn } from "../ui/Btn";
-import { Modal } from "../ui/Modal";
+import { RoleInfoModal } from "../ui/RoleInfoModal";
 import { SetupScreenShell } from "./SetupScreenShell";
 import type { RoleId, RoleCounts, WinMode, RevealMode } from "../../types";
 
@@ -215,25 +215,7 @@ export function SetupStep2({
         </div>
       ))}
 
-      {roleInfoId && (() => {
-        const selectedRole = ROLES[roleInfoId];
-        if (!selectedRole) return null;
-        return (
-        <Modal onClose={() => setRoleInfoId(null)}>
-          <div className="text-center">
-            <div className="text-5xl mb-3">{selectedRole.icon}</div>
-            <h2 className="text-xl font-bold mb-1">{selectedRole.name}</h2>
-            <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold mb-4 ${
-              selectedRole.team === "wolf" ? "bg-red-900/50 text-red-400" : "bg-green-900/50 text-green-400"
-            }`}>
-              {selectedRole.team === "wolf" ? "🐺 Böse" : "🏘️ Gut"}
-            </span>
-            <p className="text-gray-300 text-sm leading-relaxed">{selectedRole.desc}</p>
-          </div>
-          <Btn onClick={() => setRoleInfoId(null)} cls="bg-gray-700 text-white w-full mt-5">Schließen</Btn>
-        </Modal>
-        );
-      })()}
+      {roleInfoId && <RoleInfoModal roleId={roleInfoId} onClose={() => setRoleInfoId(null)} />}
     </SetupScreenShell>
   );
 }

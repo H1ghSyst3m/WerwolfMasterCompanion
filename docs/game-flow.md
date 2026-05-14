@@ -148,7 +148,7 @@ Online Mode
     │
     ├── Playing Phase
     │       ├── GM controls night/day using shared GM screens
-    │       └── Players can reopen their private role card via a small button
+    │       └── Players can reopen their private role card and role description
     │
     └── Game Over
             └── GM can reset to lobby with existing players
@@ -161,7 +161,7 @@ Online lobby tools:
 - Let the former GM join the same room as a normal player after transfer.
 - Reset from game over back to lobby while preserving all existing player records, including disconnected players.
 
-Online Mode does not duplicate the GM frontend. `OnlineGmController` renders shared setup, assignment, night/day, overlay, and game-over components from server snapshots. Player phones use the separate player-only view for join, lobby waiting, role reveal, and private role access.
+Online Mode does not duplicate the GM frontend. `OnlineGmController` renders shared setup, assignment, night/day, overlay, and game-over components from server snapshots. Player phones use the separate player-only view for join, lobby waiting, role reveal, private role card access, and private role descriptions.
 
 The rest of this document describes the shared game flow and Local Mode baseline. Online-specific room lifecycle details live in `docs/online-mode.md`.
 
@@ -362,7 +362,7 @@ Shown in Local Mode when the `roleReveal` preference is enabled. Entered immedia
 
 **Save behavior:** Current Local Mode saves can persist `"roleReveal"` with `schemaVersion: 2`; restore also accepts legacy `"rolereveal"` and normalizes it to `"roleReveal"`.
 
-**Online behavior:** Online Mode always uses player-owned role reveal. Each player reveals their own role on their own phone, and the GM sees reveal completion status.
+**Online behavior:** Online Mode always uses player-owned role reveal. Each player reveals their own role on their own phone, can later reopen their private role card and role description, and the GM sees reveal completion status.
 
 ---
 

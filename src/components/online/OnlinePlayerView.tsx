@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { RoleRevealScreen } from "../setup/RoleRevealScreen";
 import { Btn } from "../ui/Btn";
 import { Modal } from "../ui/Modal";
+import { RoleInfoModal } from "../ui/RoleInfoModal";
 import type { OnlinePlayerSnapshot } from "../../online/messages";
 import type { RoleId } from "../../types";
 
@@ -13,6 +14,7 @@ interface OnlinePlayerViewProps {
 
 export function OnlinePlayerView({ snapshot, onRevealDone, onLeave }: OnlinePlayerViewProps) {
   const [leaveOpen, setLeaveOpen] = useState(false);
+  const [roleInfoOpen, setRoleInfoOpen] = useState(false);
   const [roleCardContext, setRoleCardContext] = useState<{ playerId: number; role: RoleId } | null>(null);
   const player = snapshot.player;
   const canLeave = snapshot.roomPhase === "lobby" || snapshot.roomPhase === "ended" || player?.alive === false;
@@ -25,7 +27,10 @@ export function OnlinePlayerView({ snapshot, onRevealDone, onLeave }: OnlinePlay
   );
 
   useEffect(() => {
-    const timerId = window.setTimeout(() => setRoleCardContext(null), 0);
+    const timerId = window.setTimeout(() => {
+      setRoleCardContext(null);
+      setRoleInfoOpen(false);
+    }, 0);
     return () => window.clearTimeout(timerId);
   }, [player?.id, player?.role]);
 
@@ -50,15 +55,24 @@ export function OnlinePlayerView({ snapshot, onRevealDone, onLeave }: OnlinePlay
       <div className="min-h-full max-w-md mx-auto px-4 py-6 flex flex-col">
         <header className="flex justify-end gap-2 mb-4">
           {canOpenRole && (
-            <button
-              onClick={() => {
-                if (player?.role) setRoleCardContext({ playerId: player.id, role: player.role });
-              }}
-              className="w-10 h-10 rounded-xl bg-gray-800 hover:bg-gray-700 border border-gray-700"
-              aria-label="Eigene Rolle anzeigen"
-            >
-              🃏
-            </button>
+            <>
+              <button
+                onClick={() => setRoleInfoOpen(true)}
+                className="w-10 h-10 rounded-xl bg-gray-800 hover:bg-gray-700 border border-gray-700"
+                aria-label="Eigene Rollenbeschreibung anzeigen"
+              >
+                ℹ️
+              </button>
+              <button
+                onClick={() => {
+                  if (player?.role) setRoleCardContext({ playerId: player.id, role: player.role });
+                }}
+                className="w-10 h-10 rounded-xl bg-gray-800 hover:bg-gray-700 border border-gray-700"
+                aria-label="Eigene Rolle anzeigen"
+              >
+                🃏
+              </button>
+            </>
           )}
         </header>
 
@@ -91,7 +105,7 @@ export function OnlinePlayerView({ snapshot, onRevealDone, onLeave }: OnlinePlay
                 : "Warte auf die Spielleitung"}
           </p>
           <p className="text-gray-400 text-sm">
-            {canOpenRole ? "Deine Rolle ist nur über die Karten-Schaltfläche sichtbar." : "Die nächste Ansicht erscheint automatisch."}
+            {canOpenRole ? "Deine Rolle und Beschreibung sind nur über die privaten Schaltflächen sichtbar." : "Die nächste Ansicht erscheint automatisch."}
           </p>
         </div>
 
@@ -143,6 +157,10 @@ export function OnlinePlayerView({ snapshot, onRevealDone, onLeave }: OnlinePlay
             </div>
           </div>
         </Modal>
+      )}
+
+      {roleInfoOpen && player?.role && (
+        <RoleInfoModal roleId={player.role} onClose={() => setRoleInfoOpen(false)} />
       )}
     </div>
   );

@@ -24,7 +24,7 @@ Add the role to `ROLES`:
   icon: "🎭",
   team: "wolf" | "village",
   cat: "classic" | "special",
-  desc: "Description shown in role info modal.",
+  desc: "Description shown in GM and player role info modals.",
   unique: true,
 },
 ```
