@@ -30,7 +30,15 @@ export function OnlinePlayerView({ snapshot, onRevealDone, onLeave }: OnlinePlay
   }, [player?.id, player?.role]);
 
   if (snapshot.roomPhase === "roleReveal" && player?.role && !snapshot.roleRevealed) {
-    return <RoleRevealScreen players={[player]} onDone={onRevealDone} doneLabel="Fertig" />;
+    return (
+      <RoleRevealScreen
+        players={[player]}
+        onDone={onRevealDone}
+        doneLabel="Fertig"
+        showRoleInfo
+        showRoleInfoIdentity={false}
+      />
+    );
   }
 
   if (roleCardOpen && player?.role) {
@@ -41,6 +49,8 @@ export function OnlinePlayerView({ snapshot, onRevealDone, onLeave }: OnlinePlay
         title="Deine Rolle"
         instructionText="Nur für dich sichtbar öffnen."
         doneLabel="Schließen"
+        showRoleInfo
+        showRoleInfoIdentity={false}
       />
     );
   }
@@ -91,7 +101,7 @@ export function OnlinePlayerView({ snapshot, onRevealDone, onLeave }: OnlinePlay
                 : "Warte auf die Spielleitung"}
           </p>
           <p className="text-gray-400 text-sm">
-            {canOpenRole ? "Deine Rolle ist nur über die Karten-Schaltfläche sichtbar." : "Die nächste Ansicht erscheint automatisch."}
+            {canOpenRole ? "Deine Rolle und Beschreibung sind über die private Karte sichtbar." : "Die nächste Ansicht erscheint automatisch."}
           </p>
         </div>
 
@@ -144,6 +154,7 @@ export function OnlinePlayerView({ snapshot, onRevealDone, onLeave }: OnlinePlay
           </div>
         </Modal>
       )}
+
     </div>
   );
 }

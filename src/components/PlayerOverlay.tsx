@@ -1,7 +1,7 @@
-import { ROLES } from "../constants/roles";
 import { getRoleDisplay } from "../domain/roleDisplay";
 import { Modal } from "./ui/Modal";
 import { Btn } from "./ui/Btn";
+import { RoleInfoModal } from "./ui/RoleInfoModal";
 import type { Player, RoleId } from "../types";
 
 interface PlayerOverlayProps {
@@ -41,21 +41,7 @@ export function PlayerOverlay({ players, roleInfoId, setRoleInfoId, onClose }: P
         <Btn onClick={onClose} cls="bg-gray-700 text-white w-full mt-4">Schließen</Btn>
       </Modal>
 
-      {roleInfoId && ROLES[roleInfoId] && (
-        <Modal onClose={() => setRoleInfoId(null)}>
-          <div className="text-center">
-            <div className="text-5xl mb-3">{ROLES[roleInfoId].icon}</div>
-            <h2 className="text-xl font-bold mb-1">{ROLES[roleInfoId].name}</h2>
-            <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold mb-4 ${
-              ROLES[roleInfoId].team === "wolf" ? "bg-red-900/50 text-red-400" : "bg-green-900/50 text-green-400"
-            }`}>
-              {ROLES[roleInfoId].team === "wolf" ? "🐺 Böse" : "🏘️ Gut"}
-            </span>
-            <p className="text-gray-300 text-sm leading-relaxed">{ROLES[roleInfoId].desc}</p>
-          </div>
-          <Btn onClick={() => setRoleInfoId(null)} cls="bg-gray-700 text-white w-full mt-5">Schließen</Btn>
-        </Modal>
-      )}
+      {roleInfoId && <RoleInfoModal roleId={roleInfoId} onClose={() => setRoleInfoId(null)} />}
     </>
   );
 }

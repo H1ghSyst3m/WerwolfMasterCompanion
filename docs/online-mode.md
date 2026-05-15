@@ -75,7 +75,7 @@ Role reveal
 Playing
     │
     ├── GM controls night/day flow
-    └── Players can reopen their private role card
+    └── Players can reopen their private role card, including its footer role-description action
     │
 Ended
     │
@@ -159,6 +159,8 @@ Online role reveal is player-owned:
 - During `roleReveal`, each player sees the card reveal flow on their own phone.
 - After reveal/game start, the role is not shown inline in the player list.
 - Players can open their own private role card with the small card button.
+- After a private card has been revealed once, the info button beside the footer action opens the player's role description.
+- Player-facing role descriptions hide the large role title, icon, and team badge; GM role info remains fully labeled.
 
 This avoids accidental role exposure while preserving access for the player.
 
