@@ -223,10 +223,11 @@ The server validates command ownership so stale or replaced sockets cannot act a
 - latest snapshot
 - current session token
 - stored reconnect session
+- automatic reconnect/resume state
 - host transfer handoff state
 - send/reconnect helpers
 
-It guards websocket event handlers so stale sockets cannot overwrite React state.
+It guards websocket event handlers so stale sockets cannot overwrite React state. During transient reconnects it keeps the last valid snapshot visible and resumes with the current or stored session token.
 
 ### Online Snapshots
 

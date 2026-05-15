@@ -30,6 +30,8 @@ Port selection:
 
 Invalid port values fall back safely to `8787`.
 
+The websocket server sends heartbeat pings about every 25 seconds. Clients that do not answer with pong frames are terminated so dead sockets are cleaned up, while idle but healthy browser connections stay active through proxies.
+
 ---
 
 ## Frontend Environment
@@ -113,6 +115,8 @@ Known clients can reconnect while the server process is alive:
 
 - GM reconnects with host token.
 - Players reconnect with player token.
+- Browser clients automatically reconnect with backoff and resume their stored/current session after transient socket closes.
+- The last valid room snapshot stays visible during automatic reconnect; the manual retry and Fortsetzen buttons remain as fallback.
 - When a player reconnects from a new socket, stale sessions for that player are removed.
 - Player commands are accepted only from the current active client id.
 

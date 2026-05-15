@@ -3,12 +3,17 @@ import { EventEmitter } from "node:events";
 import { afterEach, describe, expect, it } from "vitest";
 import { WebSocket, WebSocketServer } from "ws";
 import { RoomManager } from "./roomManager";
+import { startWebSocketHeartbeat } from "./websocketHeartbeat";
 import { isClientMessage } from "../src/online/messages";
 import type { ClientMessage, ServerMessage } from "../src/online/messages";
 
 interface TestServer {
   url: string;
   close: () => Promise<void>;
+}
+
+interface TestServerOptions {
+  heartbeatIntervalMs?: number;
 }
 
 type QueuedReaderItem =
@@ -78,12 +83,13 @@ class SocketReader {
   }
 }
 
-async function createTestServer(): Promise<TestServer> {
+async function createTestServer(options: TestServerOptions = {}): Promise<TestServer> {
   const manager = new RoomManager();
   const sockets = new Map<string, WebSocket>();
   let nextClientId = 1;
   const server = http.createServer();
   const wss = new WebSocketServer({ server, path: "/ws" });
+  if (options.heartbeatIntervalMs !== undefined) startWebSocketHeartbeat(wss, options.heartbeatIntervalMs);
 
   function flush(outgoing: ReturnType<RoomManager["handle"]>): void {
     outgoing.forEach(({ clientId, message }) => {
@@ -136,11 +142,30 @@ async function createTestServer(): Promise<TestServer> {
   return testServer;
 }
 
-function connect(url: string): Promise<WebSocket> {
+function connect(url: string, options?: WebSocket.ClientOptions): Promise<WebSocket> {
   return new Promise((resolve, reject) => {
-    const socket = new WebSocket(url);
+    const socket = new WebSocket(url, options);
     socket.once("open", () => resolve(socket));
     socket.once("error", reject);
+  });
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function waitForClose(socket: WebSocket, timeoutMs = 1_000): Promise<void> {
+  if (socket.readyState === WebSocket.CLOSED) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const onClose = () => {
+      clearTimeout(timeoutId);
+      resolve();
+    };
+    const timeoutId = setTimeout(() => {
+      socket.off("close", onClose);
+      reject(new Error(`Timed out waiting for websocket close after ${timeoutMs}ms`));
+    }, timeoutMs);
+    socket.once("close", onClose);
   });
 }
 
@@ -155,6 +180,26 @@ afterEach(async () => {
 });
 
 describe("websocket room flow", () => {
+  it("keeps responsive websocket clients alive with heartbeat pings", async () => {
+    const server = await createTestServer({ heartbeatIntervalMs: 20 });
+    const socket = await connect(server.url);
+
+    await wait(90);
+
+    expect(socket.readyState).toBe(WebSocket.OPEN);
+
+    socket.close();
+  });
+
+  it("terminates websocket clients that do not answer heartbeat pings", async () => {
+    const server = await createTestServer({ heartbeatIntervalMs: 20 });
+    const socket = await connect(server.url, { autoPong: false });
+
+    await waitForClose(socket);
+
+    expect(socket.readyState).toBe(WebSocket.CLOSED);
+  });
+
   it("times out when a websocket message never arrives", async () => {
     const server = await createTestServer();
     const socket = await connect(server.url);
@@ -245,5 +290,70 @@ describe("websocket room flow", () => {
 
     gm.close();
     player.close();
+  });
+
+  it("resumes a player session after the socket reconnects", async () => {
+    const server = await createTestServer();
+    const gm = await connect(server.url);
+    const player = await connect(server.url);
+    const gmReader = new SocketReader(gm);
+    const playerReader = new SocketReader(player);
+
+    const gmConnected = await send(gm, gmReader, { type: "gm:createRoom" });
+    expect(gmConnected.type).toBe("connected");
+    if (gmConnected.type !== "connected") throw new Error("expected connected");
+    await gmReader.next();
+
+    const playerConnectedPromise = playerReader.next();
+    const gmSnapshotPromise = gmReader.next();
+    player.send(JSON.stringify({
+      type: "player:joinRoom",
+      payload: { roomCode: gmConnected.session.roomCode, name: "Alex" },
+    } satisfies ClientMessage));
+
+    const playerConnected = await playerConnectedPromise;
+    await playerReader.next();
+    await gmSnapshotPromise;
+    expect(playerConnected.type).toBe("connected");
+    if (playerConnected.type !== "connected") throw new Error("expected player connected");
+
+    player.close();
+    const offlineSnapshot = await gmReader.next();
+    expect(offlineSnapshot.type).toBe("snapshot");
+    if (offlineSnapshot.type !== "snapshot" || offlineSnapshot.snapshot.view !== "gm") {
+      throw new Error("expected gm snapshot");
+    }
+    expect(offlineSnapshot.snapshot.players.find(candidate => candidate.name === "Alex")?.connected).toBe(false);
+
+    const resumedPlayer = await connect(server.url);
+    const resumedReader = new SocketReader(resumedPlayer);
+    const resumedConnected = await send(resumedPlayer, resumedReader, {
+      type: "resume",
+      payload: {
+        roomCode: playerConnected.session.roomCode,
+        clientToken: playerConnected.session.clientToken,
+      },
+    });
+
+    expect(resumedConnected.type).toBe("connected");
+    if (resumedConnected.type !== "connected") throw new Error("expected resumed player connected");
+    expect(resumedConnected.session).toEqual(playerConnected.session);
+
+    const resumedSnapshot = await resumedReader.next();
+    expect(resumedSnapshot.type).toBe("snapshot");
+    if (resumedSnapshot.type !== "snapshot" || resumedSnapshot.snapshot.view !== "player") {
+      throw new Error("expected player snapshot");
+    }
+    expect(resumedSnapshot.snapshot.player?.name).toBe("Alex");
+
+    const gmResumeSnapshot = await gmReader.next();
+    expect(gmResumeSnapshot.type).toBe("snapshot");
+    if (gmResumeSnapshot.type !== "snapshot" || gmResumeSnapshot.snapshot.view !== "gm") {
+      throw new Error("expected gm snapshot after resume");
+    }
+    expect(gmResumeSnapshot.snapshot.players.find(candidate => candidate.name === "Alex")?.connected).toBe(true);
+
+    gm.close();
+    resumedPlayer.close();
   });
 });
