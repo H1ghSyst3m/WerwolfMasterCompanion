@@ -1,6 +1,7 @@
 import http from "node:http";
 import { WebSocket, WebSocketServer } from "ws";
 import { RoomManager } from "./roomManager";
+import { startWebSocketHeartbeat } from "./websocketHeartbeat";
 import { isClientMessage } from "../src/online/messages";
 import type { ClientMessage, ServerMessage } from "../src/online/messages";
 
@@ -67,6 +68,7 @@ const server = http.createServer((req, res) => {
 });
 
 const wss = new WebSocketServer({ server, path: "/ws" });
+startWebSocketHeartbeat(wss);
 
 wss.on("error", error => {
   console.error("WebSocket server error:", error);

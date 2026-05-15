@@ -68,7 +68,7 @@ If `VITE_PUBLIC_APP_URL` is not configured, QR/join links default to the current
 ## What Works Out of the Box
 
 - `localStorage` save/restore in Local Mode, identical behavior inside the WebView.
-- Online reconnect tokens while the server process still has the room.
+- Online reconnect tokens and automatic websocket resume while the server process still has the room.
 - Touch/pointer events, including drag-to-reveal role cards.
 - Tailwind CSS compiled into static assets with no runtime dependency.
 - Game logic as pure TypeScript without native API requirements.

@@ -163,7 +163,8 @@ Local Mode is fully client-side and works offline. There is no Redux, Zustand, o
 Browser client
   └── useOnlineRoom()
         ├── sends ClientMessage commands
-        └── receives role-filtered ServerMessage snapshots
+        ├── receives role-filtered ServerMessage snapshots
+        └── automatically reconnects and resumes stored/current sessions
 
 Node server
   └── RoomManager
@@ -172,6 +173,8 @@ Node server
         ├── applies shared game rules
         └── broadcasts role-filtered snapshots
 ```
+
+The websocket entrypoint keeps idle connections alive with server heartbeat pings and terminates clients that stop answering.
 
 The GM frontend is not duplicated. `OnlineGmController` renders the same setup, assignment, night/day, game-over, and overlay components using server snapshots. Player phones use separate lightweight UI because they only need join/lobby/role reveal/private role card flows.
 

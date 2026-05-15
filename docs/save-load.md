@@ -61,6 +61,8 @@ Online clients store a compact reconnect record:
 
 This is only a reconnect handle. The full session object and actual room state remain in the server `RoomManager` and are lost if the server process restarts.
 
+The same record is used for automatic reconnect/resume after transient websocket closes and for the manual Fortsetzen action. It is not a full online room save.
+
 ---
 
 ## SaveState Shape

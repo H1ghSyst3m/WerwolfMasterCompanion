@@ -14,6 +14,7 @@ export function OnlineHome({ online, initialRoomCode = "", onBack }: OnlineHomeP
 
   const statusText = useMemo(() => {
     if (online.status === "open") return "Verbunden";
+    if (online.status === "reconnecting") return "Verbinde erneut...";
     if (online.status === "connecting") return "Verbinde...";
     return "Nicht verbunden";
   }, [online.status]);
