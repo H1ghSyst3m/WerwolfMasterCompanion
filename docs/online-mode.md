@@ -86,9 +86,15 @@ Ended
 
 Reset to lobby keeps the room code and all existing player records, including disconnected players. Player names, reconnect tokens, client ids, and connection state are carried forward for every player record. It clears roles, alive/dead state, lovers, logs, timers, night/day state, winner, and setup choices.
 
+The GM can also cancel setup, role reveal, or a running game back to the lobby with the same reset behavior.
+
 ---
 
 ## GM Lobby Tools
+
+### Close Room
+
+The GM can close the room from the lobby. Connected clients receive a `roomClosed` message and return to the Online Mode entry screen. The room is deleted from server memory, all room sessions are removed, and old reconnect tokens stop working.
 
 ### Kick Player
 
@@ -144,6 +150,7 @@ Server messages include:
 
 - `connected`
 - `snapshot`
+- `roomClosed`
 - `hostTransferred`
 - `kicked`
 - `leftRoom`

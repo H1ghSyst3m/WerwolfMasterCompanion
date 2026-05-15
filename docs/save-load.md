@@ -63,6 +63,8 @@ This is only a reconnect handle. The full session object and actual room state r
 
 The same record is used for automatic reconnect/resume after transient websocket closes and for the manual Fortsetzen action. It is not a full online room save.
 
+When the GM closes an online room, connected clients delete this record. Disconnected clients may still have the stale record locally, but resume fails because the server room and tokens were removed.
+
 ---
 
 ## SaveState Shape

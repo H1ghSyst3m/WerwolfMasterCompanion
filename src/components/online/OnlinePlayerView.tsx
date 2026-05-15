@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { RoleRevealScreen } from "../setup/RoleRevealScreen";
 import { Btn } from "../ui/Btn";
-import { Modal } from "../ui/Modal";
+import { ConfirmModal } from "../ui/ConfirmModal";
 import type { OnlinePlayerSnapshot } from "../../online/messages";
 import type { RoleId } from "../../types";
 
@@ -126,33 +126,22 @@ export function OnlinePlayerView({ snapshot, onRevealDone, onLeave }: OnlinePlay
       </div>
 
       {leaveOpen && (
-        <Modal onClose={() => setLeaveOpen(false)} ariaLabel="Raum wechseln">
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-lg font-bold">Raum wechseln?</h2>
-              <p className="text-sm text-gray-400 mt-2">
-                {canLeave
-                  ? "Du verlässt diesen Raum auf diesem Gerät. In der Lobby wirst du aus der Liste entfernt."
-                  : "Während du im laufenden Spiel lebst, kannst du den Raum nicht wechseln."}
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Btn onClick={() => setLeaveOpen(false)} cls="flex-1 bg-gray-700 hover:bg-gray-600 text-white">
-                Abbrechen
-              </Btn>
-              <Btn
-                onClick={() => {
-                  onLeave();
-                  setLeaveOpen(false);
-                }}
-                cls="flex-1 bg-red-600 hover:bg-red-500 text-white"
-                disabled={!canLeave}
-              >
-                Wechseln
-              </Btn>
-            </div>
-          </div>
-        </Modal>
+        <ConfirmModal
+          title="Raum wechseln?"
+          description={
+            canLeave
+              ? "Du verlässt diesen Raum auf diesem Gerät. In der Lobby wirst du aus der Liste entfernt."
+              : "Während du im laufenden Spiel lebst, kannst du den Raum nicht wechseln."
+          }
+          cancelLabel="Abbrechen"
+          confirmLabel="Wechseln"
+          onCancel={() => setLeaveOpen(false)}
+          onConfirm={() => {
+            onLeave();
+            setLeaveOpen(false);
+          }}
+          confirmDisabled={!canLeave}
+        />
       )}
 
     </div>

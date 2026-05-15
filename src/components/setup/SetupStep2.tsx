@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { ReactNode } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { ROLES } from "../../constants/roles";
 import { Btn } from "../ui/Btn";
@@ -19,6 +20,7 @@ interface SetupStep2Props {
   roleReveal: boolean;
   setRoleReveal: (v: boolean) => void;
   hideRoleReveal?: boolean;
+  headerAction?: ReactNode;
   onBack: () => void;
   onNext: () => void;
 }
@@ -36,6 +38,7 @@ export function SetupStep2({
   roleReveal,
   setRoleReveal,
   hideRoleReveal = false,
+  headerAction,
   onBack,
   onNext,
 }: SetupStep2Props) {
@@ -49,6 +52,7 @@ export function SetupStep2({
     <SetupScreenShell
       step={2}
       title="Rollen auswählen"
+      headerAction={headerAction}
       onBack={onBack}
       footer={
         <Btn

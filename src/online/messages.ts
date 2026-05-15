@@ -58,6 +58,7 @@ export type OnlineSnapshot = OnlineGmSnapshot | OnlinePlayerSnapshot;
 
 export type GmCommand =
   | { type: "gm:createRoom"; payload?: undefined }
+  | { type: "gm:closeRoom"; payload?: undefined }
   | { type: "gm:lockLobby"; payload?: undefined }
   | { type: "gm:unlockLobby"; payload?: undefined }
   | { type: "gm:goToAssignment"; payload?: undefined }
@@ -126,6 +127,7 @@ export interface ClientMessage {
 export type ServerMessage =
   | { type: "connected"; session: OnlineSession }
   | { type: "snapshot"; snapshot: OnlineSnapshot }
+  | { type: "roomClosed"; roomCode: string }
   | { type: "hostTransferred"; roomCode: string }
   | { type: "kicked"; roomCode: string }
   | { type: "leftRoom"; roomCode: string }
@@ -262,6 +264,7 @@ export function isClientMessage(value: unknown): value is ClientMessage {
   if ("clientToken" in maybe && maybe.clientToken !== undefined && typeof maybe.clientToken !== "string") return false;
   switch (maybe.type) {
     case "gm:createRoom":
+    case "gm:closeRoom":
     case "gm:lockLobby":
     case "gm:unlockLobby":
     case "gm:goToAssignment":

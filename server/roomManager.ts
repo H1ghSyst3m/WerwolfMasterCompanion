@@ -11,6 +11,7 @@ import {
 } from "./roomGameFlow";
 import { broadcast, error } from "./roomSnapshots";
 import {
+  closeRoom,
   createRoom,
   disconnectClient,
   joinRoom,
@@ -110,6 +111,8 @@ export class RoomManager {
   private handleGm(clientId: string, room: ServerRoom, message: ClientMessage): RoomOutgoingMessage[] {
     if (room.hostClientId !== clientId) throw new Error("Nur die Spielleitung darf diese Aktion ausführen.");
     switch (message.type) {
+      case "gm:closeRoom":
+        return closeRoom(this.sessionContext(), room);
       case "gm:lockLobby":
         lockLobby(room);
         return broadcast(room);

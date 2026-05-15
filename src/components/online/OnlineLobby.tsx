@@ -1,18 +1,20 @@
 import { useState } from "react";
 import { Btn } from "../ui/Btn";
-import { Modal } from "../ui/Modal";
+import { ConfirmModal } from "../ui/ConfirmModal";
 import { RoomJoinQr } from "./RoomJoinQr";
 import type { OnlineGmSnapshot } from "../../online/messages";
 
 interface OnlineLobbyProps {
   snapshot: OnlineGmSnapshot;
   onStartSetup: () => void;
+  onCloseRoom: () => void;
   onTransferHost: (playerId: number) => void;
   onKickPlayer: (playerId: number) => void;
 }
 
-export function OnlineLobby({ snapshot, onStartSetup, onTransferHost, onKickPlayer }: OnlineLobbyProps) {
+export function OnlineLobby({ snapshot, onStartSetup, onCloseRoom, onTransferHost, onKickPlayer }: OnlineLobbyProps) {
   const [transferOpen, setTransferOpen] = useState(false);
+  const [closeOpen, setCloseOpen] = useState(false);
   const [kickPlayerId, setKickPlayerId] = useState<number | null>(null);
   const connectedPlayers = snapshot.players.filter(player => player.connected);
   const kickPlayer = kickPlayerId !== null
@@ -92,34 +94,42 @@ export function OnlineLobby({ snapshot, onStartSetup, onTransferHost, onKickPlay
               ))}
             </div>
           )}
+
+          <Btn
+            onClick={() => setCloseOpen(true)}
+            cls="bg-red-950/70 hover:bg-red-900 text-red-100 w-full border border-red-900/70"
+          >
+            Raum schließen
+          </Btn>
         </div>
       </div>
 
+      {closeOpen && (
+        <ConfirmModal
+          title="Raum schließen?"
+          description="Der Raum wird für alle beendet. Verbundene Spieler kehren zum Online-Start zurück. Fortsetzen ist danach nicht mehr möglich."
+          cancelLabel="Abbrechen"
+          confirmLabel="Schließen"
+          onCancel={() => setCloseOpen(false)}
+          onConfirm={() => {
+            onCloseRoom();
+            setCloseOpen(false);
+          }}
+        />
+      )}
+
       {kickPlayer && (
-        <Modal onClose={() => setKickPlayerId(null)} ariaLabel="Spieler entfernen">
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-lg font-bold">Spieler entfernen?</h2>
-              <p className="text-sm text-gray-400 mt-2">
-                {kickPlayer.name} wird aus der Lobby entfernt und der Name wird wieder frei.
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Btn onClick={() => setKickPlayerId(null)} cls="flex-1 bg-gray-700 hover:bg-gray-600 text-white">
-                Abbrechen
-              </Btn>
-              <Btn
-                onClick={() => {
-                  onKickPlayer(kickPlayer.id);
-                  setKickPlayerId(null);
-                }}
-                cls="flex-1 bg-red-600 hover:bg-red-500 text-white"
-              >
-                Entfernen
-              </Btn>
-            </div>
-          </div>
-        </Modal>
+        <ConfirmModal
+          title="Spieler entfernen?"
+          description={`${kickPlayer.name} wird aus der Lobby entfernt und der Name wird wieder frei.`}
+          cancelLabel="Abbrechen"
+          confirmLabel="Entfernen"
+          onCancel={() => setKickPlayerId(null)}
+          onConfirm={() => {
+            onKickPlayer(kickPlayer.id);
+            setKickPlayerId(null);
+          }}
+        />
       )}
     </div>
   );

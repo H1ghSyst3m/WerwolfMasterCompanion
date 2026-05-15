@@ -30,7 +30,7 @@ export function Modal({ children, onClose, ariaLabel = "Dialog" }: ModalProps) {
             onClose?.();
           }
         }}
-        className="bg-gray-800 rounded-2xl p-6 max-w-sm w-full border border-gray-600 shadow-2xl max-h-[90vh] overflow-y-auto outline-none"
+        className="bg-gray-800 text-white rounded-2xl p-6 max-w-sm w-full border border-gray-600 shadow-2xl max-h-[90vh] overflow-y-auto outline-none"
         onClick={e => e.stopPropagation()}
       >
         {children}

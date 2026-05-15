@@ -1,4 +1,5 @@
 import { useMemo, useCallback } from "react";
+import type { ReactNode } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { ROLES } from "../../constants/roles";
 import { Btn } from "../ui/Btn";
@@ -15,6 +16,7 @@ interface SetupStep3Props {
   setPlayers: Dispatch<SetStateAction<Player[]>>;
   shuffleRoles: () => void;
   startGame: () => void;
+  headerAction?: ReactNode;
   onBack: () => void;
 }
 
@@ -28,6 +30,7 @@ export function SetupStep3({
   setPlayers,
   shuffleRoles,
   startGame,
+  headerAction,
   onBack,
 }: SetupStep3Props) {
   const assignedCounts = useMemo(() => {
@@ -103,6 +106,7 @@ export function SetupStep3({
     <SetupScreenShell
       step={3}
       title="Rollenzuweisung"
+      headerAction={headerAction}
       onBack={handleBack}
       footer={footer}
     >
