@@ -10,6 +10,7 @@ import { DayPhase } from "../components/day/DayPhase";
 import { HunterTrigger } from "../components/HunterTrigger";
 import { GameOver } from "../components/GameOver";
 import { PlayerOverlay } from "../components/PlayerOverlay";
+import { ConfirmModal } from "../components/ui/ConfirmModal";
 import { Modal } from "../components/ui/Modal";
 import { Btn } from "../components/ui/Btn";
 import { OnlineLobby } from "../components/online/OnlineLobby";
@@ -64,6 +65,7 @@ export function OnlineGmController({ snapshot, sendCommand }: OnlineGmController
   const [roleInfoId, setRoleInfoId] = useState<RoleId | null>(null);
   const [showLog, setShowLog] = useState(false);
   const [showPlayers, setShowPlayers] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
   const [voteConfirm, setVoteConfirm] = useState<Player | null>(null);
   const draftRef = useRef<OnlineGmDraft>(snapshotToDraft(snapshot));
 
@@ -168,11 +170,37 @@ export function OnlineGmController({ snapshot, sendCommand }: OnlineGmController
     ? players.find(player => player.id === snapshot.dayVoteVictimId) ?? null
     : null;
 
+  const cancelGame = useCallback(() => {
+    sendCommand({ type: "gm:resetToLobby" });
+    setCancelOpen(false);
+  }, [sendCommand]);
+
+  const cancelGameButton = (
+    <button
+      onClick={() => setCancelOpen(true)}
+      className="px-3 py-1.5 bg-red-950/70 hover:bg-red-900 border border-red-900/70 rounded-lg text-xs text-red-100"
+    >
+      Abbrechen
+    </button>
+  );
+
+  const cancelGameModal = cancelOpen && (
+    <ConfirmModal
+      title="Spiel abbrechen?"
+      description="Das Spiel kehrt zur Lobby zurück. Alle Spieler bleiben im Raum. Rollen, Spielstand, Protokoll und Timer werden zurückgesetzt."
+      cancelLabel="Weiter spielen"
+      confirmLabel="Spiel abbrechen"
+      onCancel={() => setCancelOpen(false)}
+      onConfirm={cancelGame}
+    />
+  );
+
   if (snapshot.roomPhase === "lobby") {
     return (
       <OnlineLobby
         snapshot={snapshot}
         onStartSetup={() => sendCommand({ type: "gm:lockLobby" })}
+        onCloseRoom={() => sendCommand({ type: "gm:closeRoom" })}
         onTransferHost={playerId => sendCommand({ type: "gm:transferHost", payload: { playerId } })}
         onKickPlayer={playerId => sendCommand({ type: "gm:kickPlayer", payload: { playerId } })}
       />
@@ -181,39 +209,47 @@ export function OnlineGmController({ snapshot, sendCommand }: OnlineGmController
 
   if (snapshot.roomPhase === "setup") {
     return (
-      <SetupStep2
-        players={players}
-        roleCounts={snapshot.roleCounts}
-        setRoleCounts={setRoleCounts}
-        roleInfoId={roleInfoId}
-        setRoleInfoId={setRoleInfoId}
-        winMode={snapshot.winMode}
-        setWinMode={winMode => sendCommand({ type: "gm:setPrefs", payload: { winMode } satisfies Partial<Prefs> })}
-        revealMode={snapshot.revealMode}
-        setRevealMode={revealMode => sendCommand({ type: "gm:setPrefs", payload: { revealMode } satisfies Partial<Prefs> })}
-        roleReveal={false}
-        setRoleReveal={() => undefined}
-        hideRoleReveal
-        onBack={() => sendCommand({ type: "gm:unlockLobby" })}
-        onNext={() => sendCommand({ type: "gm:goToAssignment" })}
-      />
+      <>
+        <SetupStep2
+          players={players}
+          roleCounts={snapshot.roleCounts}
+          setRoleCounts={setRoleCounts}
+          roleInfoId={roleInfoId}
+          setRoleInfoId={setRoleInfoId}
+          winMode={snapshot.winMode}
+          setWinMode={winMode => sendCommand({ type: "gm:setPrefs", payload: { winMode } satisfies Partial<Prefs> })}
+          revealMode={snapshot.revealMode}
+          setRevealMode={revealMode => sendCommand({ type: "gm:setPrefs", payload: { revealMode } satisfies Partial<Prefs> })}
+          roleReveal={false}
+          setRoleReveal={() => undefined}
+          hideRoleReveal
+          headerAction={cancelGameButton}
+          onBack={() => sendCommand({ type: "gm:unlockLobby" })}
+          onNext={() => sendCommand({ type: "gm:goToAssignment" })}
+        />
+        {cancelGameModal}
+      </>
     );
   }
 
   if (snapshot.roomPhase === "assignment") {
     return (
-      <SetupStep3
-        players={players}
-        roleCounts={snapshot.roleCounts}
-        assignMode={snapshot.assignMode}
-        manualAssign={snapshot.manualAssign}
-        setAssignMode={assignMode => sendCommand({ type: "gm:setAssignMode", payload: { assignMode } })}
-        setManualAssign={setManualAssign}
-        setPlayers={setPlayers}
-        shuffleRoles={() => sendCommand({ type: "gm:shuffleRoles" })}
-        startGame={() => sendCommand({ type: "gm:startGame" })}
-        onBack={() => sendCommand({ type: "gm:lockLobby" })}
-      />
+      <>
+        <SetupStep3
+          players={players}
+          roleCounts={snapshot.roleCounts}
+          assignMode={snapshot.assignMode}
+          manualAssign={snapshot.manualAssign}
+          setAssignMode={assignMode => sendCommand({ type: "gm:setAssignMode", payload: { assignMode } })}
+          setManualAssign={setManualAssign}
+          setPlayers={setPlayers}
+          shuffleRoles={() => sendCommand({ type: "gm:shuffleRoles" })}
+          startGame={() => sendCommand({ type: "gm:startGame" })}
+          headerAction={cancelGameButton}
+          onBack={() => sendCommand({ type: "gm:lockLobby" })}
+        />
+        {cancelGameModal}
+      </>
     );
   }
 
@@ -221,6 +257,9 @@ export function OnlineGmController({ snapshot, sendCommand }: OnlineGmController
     return (
       <div className="h-full overflow-y-auto bg-gradient-to-b from-indigo-950 to-gray-950 text-white">
         <div className="min-h-full max-w-md mx-auto px-4 py-6 flex flex-col">
+          <div className="flex justify-end mb-3">
+            {cancelGameButton}
+          </div>
           <div className="text-center mb-6">
             <div className="text-6xl mb-3">🃏</div>
             <h1 className="text-2xl font-bold">Rollenaufdeckung</h1>
@@ -246,6 +285,7 @@ export function OnlineGmController({ snapshot, sendCommand }: OnlineGmController
             Erste Nacht starten →
           </Btn>
         </div>
+        {cancelGameModal}
       </div>
     );
   }
@@ -277,6 +317,7 @@ export function OnlineGmController({ snapshot, sendCommand }: OnlineGmController
             <span className="text-gray-400 text-sm ml-2">{isNight ? "Nacht" : "Tag"} · {snapshot.roomCode}</span>
           </div>
           <div className="flex gap-2">
+            {cancelGameButton}
             <button aria-label="Spieler anzeigen" onClick={() => setShowPlayers(true)} className="px-3 py-1.5 bg-gray-800 rounded-lg text-sm">👥</button>
             <button aria-label="Spielprotokoll anzeigen" onClick={() => setShowLog(true)} className="px-3 py-1.5 bg-gray-800 rounded-lg text-sm">📜</button>
           </div>
@@ -392,6 +433,7 @@ export function OnlineGmController({ snapshot, sendCommand }: OnlineGmController
           <div><span className="text-gray-400 font-bold text-lg">{players.length - alive.length}</span><br /><span className="text-gray-500">Tot</span></div>
         </div>
       </div>
+      {cancelGameModal}
     </div>
   );
 }

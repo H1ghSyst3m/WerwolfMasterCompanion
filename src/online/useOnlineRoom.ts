@@ -80,6 +80,7 @@ function isServerMessage(value: unknown): value is ServerMessage {
       return isOnlineSession(value.session);
     case "snapshot":
       return isOnlineSnapshot(value.snapshot);
+    case "roomClosed":
     case "hostTransferred":
     case "kicked":
     case "leftRoom":
@@ -94,6 +95,7 @@ function isServerMessage(value: unknown): value is ServerMessage {
 export interface OnlineRoomHook {
   status: ConnectionStatus;
   error: string | null;
+  notice: string | null;
   session: OnlineSession | null;
   snapshot: OnlineSnapshot | null;
   gmSnapshot: OnlineGmSnapshot | null;
@@ -112,6 +114,7 @@ export interface OnlineRoomHook {
 export function useOnlineRoom(): OnlineRoomHook {
   const [status, setStatus] = useState<ConnectionStatus>("connecting");
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [session, setSession] = useState<OnlineSession | null>(null);
   const [snapshot, setSnapshot] = useState<OnlineSnapshot | null>(null);
   const [storedSession, setStoredSession] = useState<StoredSession | null>(() => readStoredSession());
@@ -229,6 +232,7 @@ export function useOnlineRoom(): OnlineRoomHook {
       if (parsed.type === "connected") {
         pendingResumeRef.current = false;
         setStatus("open");
+        setNotice(null);
         setActiveSession(parsed.session);
         setWasHostTransferred(false);
         setTransferredRoomCode(null);
@@ -239,12 +243,27 @@ export function useOnlineRoom(): OnlineRoomHook {
       if (parsed.type === "snapshot") {
         pendingResumeRef.current = false;
         setStatus("open");
+        setNotice(null);
         setSnapshot(parsed.snapshot);
         setError(null);
         return;
       }
+      if (parsed.type === "roomClosed") {
+        pendingResumeRef.current = false;
+        setStatus("open");
+        setError(null);
+        setNotice("Der Raum wurde geschlossen.");
+        setActiveSession(null);
+        setSnapshot(null);
+        setWasHostTransferred(false);
+        setTransferredRoomCode(null);
+        clearStoredSession();
+        setActiveStoredSession(null);
+        return;
+      }
       if (parsed.type === "hostTransferred") {
         pendingResumeRef.current = false;
+        setNotice(null);
         setActiveSession(null);
         setSnapshot(null);
         setWasHostTransferred(true);
@@ -256,6 +275,7 @@ export function useOnlineRoom(): OnlineRoomHook {
       }
       if (parsed.type === "kicked" || parsed.type === "leftRoom") {
         pendingResumeRef.current = false;
+        setNotice(null);
         setActiveSession(null);
         setSnapshot(null);
         setWasHostTransferred(false);
@@ -315,12 +335,14 @@ export function useOnlineRoom(): OnlineRoomHook {
   }, [session]);
 
   const createRoom = useCallback(() => {
+    setNotice(null);
     setWasHostTransferred(false);
     setTransferredRoomCode(null);
     sendCommand({ type: "gm:createRoom" });
   }, [sendCommand]);
 
   const joinRoom = useCallback((roomCode: string, name: string) => {
+    setNotice(null);
     setWasHostTransferred(false);
     sendCommand({ type: "player:joinRoom", payload: { roomCode, name } });
   }, [sendCommand]);
@@ -328,6 +350,7 @@ export function useOnlineRoom(): OnlineRoomHook {
   const resumeStoredSession = useCallback(() => {
     const stored = readStoredSession();
     if (!stored) return;
+    setNotice(null);
     sendCommand({
       type: "resume",
       payload: { roomCode: stored.roomCode, clientToken: stored.clientToken },
@@ -339,6 +362,7 @@ export function useOnlineRoom(): OnlineRoomHook {
     pendingResumeRef.current = false;
     setActiveSession(null);
     setSnapshot(null);
+    setNotice(null);
     setWasHostTransferred(false);
     setTransferredRoomCode(null);
     clearStoredSession();
@@ -351,6 +375,7 @@ export function useOnlineRoom(): OnlineRoomHook {
   return useMemo(() => ({
     status,
     error,
+    notice,
     session,
     snapshot,
     gmSnapshot,
@@ -367,6 +392,7 @@ export function useOnlineRoom(): OnlineRoomHook {
   }), [
     status,
     error,
+    notice,
     session,
     snapshot,
     gmSnapshot,

@@ -8,6 +8,8 @@ interface SetupScreenShellProps {
   totalSteps?: number;
   /** Header centre title. */
   title: string;
+  /** Optional action rendered next to the step indicator. */
+  headerAction?: ReactNode;
   /** Called when the back button is pressed. Pass undefined to show a spacer instead. */
   onBack?: () => void;
   /** Content always anchored at the bottom of the screen. Omit to hide the footer entirely. */
@@ -21,6 +23,7 @@ export function SetupScreenShell({
   step,
   totalSteps = 3,
   title,
+  headerAction,
   onBack,
   footer,
   children,
@@ -47,9 +50,12 @@ export function SetupScreenShell({
 
           <h1 className="text-xl font-bold truncate text-center flex-1">{title}</h1>
 
-          <span className="text-gray-400 text-sm font-medium shrink-0 min-w-[2.5rem] text-right">
-            {step} / {totalSteps}
-          </span>
+          <div className="flex items-center justify-end gap-2 shrink-0 min-w-[2.5rem]">
+            {headerAction}
+            <span className="text-gray-400 text-sm font-medium text-right">
+              {step} / {totalSteps}
+            </span>
+          </div>
         </div>
       </header>
 

@@ -156,9 +156,11 @@ Online Mode
 
 Online lobby tools:
 
+- Close the room from the lobby; connected clients return to Online Mode home and old reconnect tokens are invalidated.
 - Kick players from the lobby.
 - Transfer GM to a connected player while in the lobby.
 - Let the former GM join the same room as a normal player after transfer.
+- Cancel setup, role reveal, or a running game back to the lobby while preserving player records and reconnect tokens.
 - Reset from game over back to lobby while preserving all existing player records, including disconnected players.
 
 Online Mode does not duplicate the GM frontend. `OnlineGmController` renders shared setup, assignment, night/day, overlay, and game-over components from server snapshots. Player phones use the separate player-only view for join, lobby waiting, role reveal, and private role card access with a footer role-description action.

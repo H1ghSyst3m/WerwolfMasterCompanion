@@ -47,6 +47,12 @@ export function OnlineHome({ online, initialRoomCode = "", onBack }: OnlineHomeP
           </div>
         )}
 
+        {online.notice && (
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 mb-4">
+            <p className="text-sm text-gray-200">{online.notice}</p>
+          </div>
+        )}
+
         {canRetryConnection && (
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-3 mb-4">
             {online.error && <p className="text-sm text-red-200 mb-3">{online.error}</p>}

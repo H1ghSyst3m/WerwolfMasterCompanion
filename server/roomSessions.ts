@@ -77,6 +77,24 @@ export function createRoom(context: RoomSessionContext, clientId: string): Outgo
   ];
 }
 
+export function closeRoom(context: RoomSessionContext, room: ServerRoom): OutgoingMessage[] {
+  if (room.roomPhase !== "lobby") throw new Error("Der Raum kann nur in der Lobby geschlossen werden.");
+  const connectedClientIds = [
+    room.hostClientId,
+    ...room.players.map(player => player.clientId),
+  ].filter((clientId): clientId is string => Boolean(clientId));
+
+  for (const [clientId, session] of context.clientSessions.entries()) {
+    if (session.roomCode === room.code) context.clientSessions.delete(clientId);
+  }
+  context.rooms.delete(room.code);
+
+  return [...new Set(connectedClientIds)].map(clientId => ({
+    clientId,
+    message: { type: "roomClosed", roomCode: room.code },
+  }));
+}
+
 export function joinRoom(context: RoomSessionContext, clientId: string, payload: unknown): OutgoingMessage[] {
   const data = payload as { roomCode?: unknown; name?: unknown };
   const roomCode = normalizeRoomCode(data.roomCode);

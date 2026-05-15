@@ -262,6 +262,46 @@ describe("RoomManager", () => {
     expect(snapshot.players.every(player => player.role === null && player.alive)).toBe(true);
   });
 
+  it("cancels a running room back to lobby while preserving reconnect tokens", () => {
+    const { manager, gmSession, playerSessions } = createRoomWithPlayers();
+    const roleCounts: RoleCounts = { werwolf: 1, dorfbewohner: 4 };
+    send(manager, "gm", { type: "gm:lockLobby" });
+    send(manager, "gm", { type: "gm:updateRoleCounts", payload: { roleCounts } });
+    send(manager, "gm", { type: "gm:goToAssignment" });
+    send(manager, "gm", { type: "gm:setAssignMode", payload: { assignMode: "manual" } });
+    send(manager, "gm", {
+      type: "gm:setManualAssign",
+      payload: {
+        manualAssign: {
+          "1": "werwolf",
+          "2": "dorfbewohner",
+          "3": "dorfbewohner",
+          "4": "dorfbewohner",
+          "5": "dorfbewohner",
+        },
+      },
+    });
+    send(manager, "gm", { type: "gm:startGame" });
+    send(manager, "gm", { type: "gm:startFirstNight" });
+    send(manager, "gm", { type: "gm:updateNightAction", payload: { nightVictim: 2 } });
+    send(manager, "gm", { type: "gm:addLog", payload: { text: "Testeintrag" } });
+
+    const resetMessages = send(manager, "gm", { type: "gm:resetToLobby" });
+    const snapshot = latestGmSnapshot(resetMessages);
+    expect(snapshot.roomPhase).toBe("lobby");
+    expect(snapshot.locked).toBe(false);
+    expect(snapshot.players).toHaveLength(5);
+    expect(snapshot.players.every(player => player.role === null && player.originalRole === null && player.alive)).toBe(true);
+    expect(snapshot.log).toEqual([]);
+    expect(snapshot.nightVictim).toBeNull();
+
+    const resumedPlayer = connected(send(manager, "p0-new", {
+      type: "resume",
+      payload: { roomCode: gmSession.roomCode, clientToken: playerSessions[0]!.clientToken },
+    }));
+    expect(resumedPlayer.role).toBe("player");
+  });
+
   it("transfers the GM role to a connected player and removes them from the player list", () => {
     const { manager } = createRoomWithPlayers();
     const transferMessages = send(manager, "gm", { type: "gm:transferHost", payload: { playerId: 1 } });
@@ -271,6 +311,37 @@ describe("RoomManager", () => {
     const snapshot = latestGmSnapshot(transferMessages);
     expect(snapshot.players.map(player => player.name)).not.toContain("Spieler 1");
     expect(transferMessages.some(message => message.clientId === "gm" && message.message.type === "hostTransferred")).toBe(true);
+  });
+
+  it("closes a lobby for all connected clients and invalidates reconnect tokens", () => {
+    const { manager, gmSession, playerSessions } = createRoomWithPlayers();
+
+    const closeMessages = send(manager, "gm", { type: "gm:closeRoom" });
+
+    expect(manager.getRoomCount()).toBe(0);
+    expect(closeMessages).toHaveLength(6);
+    expect(closeMessages.every(message => message.message.type === "roomClosed")).toBe(true);
+    expect(closeMessages.map(message => message.clientId)).toEqual(expect.arrayContaining(["gm", "p0", "p1", "p2", "p3", "p4"]));
+
+    const oldPlayerResume = send(manager, "p0-new", {
+      type: "resume",
+      payload: { roomCode: gmSession.roomCode, clientToken: playerSessions[0]!.clientToken },
+    });
+    expect(oldPlayerResume[0]?.message.type).toBe("error");
+
+    const oldGmAction = send(manager, "gm", { type: "gm:lockLobby" });
+    expect(oldGmAction[0]?.message.type).toBe("error");
+  });
+
+  it("rejects closing a room from players and outside the lobby", () => {
+    const { manager } = createRoomWithPlayers();
+
+    const playerClose = send(manager, "p0", { type: "gm:closeRoom" });
+    expect(playerClose[0]?.message.type).toBe("error");
+
+    send(manager, "gm", { type: "gm:lockLobby" });
+    const gmCloseAfterSetup = send(manager, "gm", { type: "gm:closeRoom" });
+    expect(gmCloseAfterSetup[0]?.message.type).toBe("error");
   });
 
   it("lets the GM kick connected and offline players in the lobby", () => {
@@ -940,6 +1011,7 @@ describe("RoomManager", () => {
   it("rejects malformed websocket client messages at the trust boundary", () => {
     expect(isClientMessage({ type: "unknown" })).toBe(false);
     expect(isClientMessage({ type: "gm:startGame", roomCode: {} })).toBe(false);
+    expect(isClientMessage({ type: "gm:closeRoom" })).toBe(true);
     expect(isClientMessage({ type: "gm:updateRoleCounts", payload: { roleCounts: { werwolf: -1 } } })).toBe(false);
     expect(isClientMessage({ type: "gm:updateNightAction", payload: { nachtgastTarget: 2 } })).toBe(true);
     expect(isClientMessage({ type: "gm:updateNightAction", payload: { nachtgastTarget: -1 } })).toBe(false);

@@ -212,6 +212,7 @@ This is intentional. Keeping cross-cutting Local Mode logic in the root componen
 - role counts, assignment mode, and manual assignments
 - night/day/game-over runtime state
 - lobby lock, reset to lobby, kick, and transfer GM
+- room closure and session invalidation
 
 The server validates command ownership so stale or replaced sockets cannot act as the current player.
 
@@ -225,6 +226,7 @@ The server validates command ownership so stale or replaced sockets cannot act a
 - stored reconnect session
 - automatic reconnect/resume state
 - host transfer handoff state
+- room-closed notice state
 - send/reconnect helpers
 
 It guards websocket event handlers so stale sockets cannot overwrite React state. During transient reconnects it keeps the last valid snapshot visible and resumes with the current or stored session token.
