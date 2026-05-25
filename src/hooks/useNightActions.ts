@@ -14,6 +14,10 @@ export interface NightActionsHook {
   setBeschuetzerLastTarget: Dispatch<SetStateAction<number | null>>;
   verfluchterConvertedThisNight: number | null;
   setVerfluchterConvertedThisNight: Dispatch<SetStateAction<number | null>>;
+  harterBurscheWounded: number | null;
+  setHarterBurscheWounded: Dispatch<SetStateAction<number | null>>;
+  harterBurscheWoundedThisNight: number | null;
+  setHarterBurscheWoundedThisNight: Dispatch<SetStateAction<number | null>>;
   urwolfTransform: boolean | null;
   setUrwolfTransform: Dispatch<SetStateAction<boolean | null>>;
   urwolfUsed: boolean;
@@ -52,6 +56,8 @@ export function useNightActions(): NightActionsHook {
   const [beschuetzerTarget, setBeschuetzerTarget] = useState<number | null>(null);
   const [beschuetzerLastTarget, setBeschuetzerLastTarget] = useState<number | null>(null);
   const [verfluchterConvertedThisNight, setVerfluchterConvertedThisNight] = useState<number | null>(null);
+  const [harterBurscheWounded, setHarterBurscheWounded] = useState<number | null>(null);
+  const [harterBurscheWoundedThisNight, setHarterBurscheWoundedThisNight] = useState<number | null>(null);
   const [urwolfTransform, setUrwolfTransform] = useState<boolean | null>(null);
   const [urwolfUsed, setUrwolfUsed] = useState(false);
   const [seerTarget, setSeerTarget] = useState<number | null>(null);
@@ -73,6 +79,7 @@ export function useNightActions(): NightActionsHook {
     setNachtgastTarget(null);
     setBeschuetzerTarget(null);
     setVerfluchterConvertedThisNight(null);
+    setHarterBurscheWoundedThisNight(null);
     setUrwolfTransform(null);
     setSeerTarget(null);
     setSeerRevealed(false);
@@ -92,6 +99,8 @@ export function useNightActions(): NightActionsHook {
     beschuetzerTarget, setBeschuetzerTarget,
     beschuetzerLastTarget, setBeschuetzerLastTarget,
     verfluchterConvertedThisNight, setVerfluchterConvertedThisNight,
+    harterBurscheWounded, setHarterBurscheWounded,
+    harterBurscheWoundedThisNight, setHarterBurscheWoundedThisNight,
     urwolfTransform, setUrwolfTransform,
     urwolfUsed, setUrwolfUsed,
     seerTarget, setSeerTarget,

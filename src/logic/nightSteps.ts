@@ -6,6 +6,7 @@ export interface BuildNightStepsParams {
   witchHealUsed: boolean;
   witchPoisonUsed: boolean;
   verfluchterConvertedThisNight: number | null;
+  harterBurscheWoundedThisNight?: number | null;
   hadRole: (r: RoleId) => boolean;
   aliveWithRole: (r: RoleId) => boolean;
   amorPick: number[];
@@ -17,6 +18,7 @@ export function buildNightSteps({
   witchHealUsed,
   witchPoisonUsed,
   verfluchterConvertedThisNight,
+  harterBurscheWoundedThisNight = null,
   hadRole,
   aliveWithRole,
   amorPick,
@@ -127,6 +129,16 @@ export function buildNightSteps({
       icon: "🧪",
       desc: "Hexe entscheidet über Heil- und Gifttrank.",
       active: aliveWithRole("hexe") && (!witchHealUsed || !witchPoisonUsed),
+    });
+  }
+
+  if (harterBurscheWoundedThisNight !== null) {
+    steps.push({
+      id: "harterbursche",
+      title: "Harten Burschen informieren",
+      icon: "💪",
+      desc: "Informiere den Harten Burschen leise: Er wurde getroffen und stirbt im nächsten Nachtbericht.",
+      active: true,
     });
   }
 

@@ -128,6 +128,7 @@ export function OnlineGmController({ snapshot, sendCommand }: OnlineGmController
       witchHealUsed: snapshot.witchHealUsed,
       witchPoisonUsed: snapshot.witchPoisonUsed,
       verfluchterConvertedThisNight: snapshot.verfluchterConvertedThisNight,
+      harterBurscheWoundedThisNight: snapshot.harterBurscheWoundedThisNight,
       hadRole: roleId => players.some(player => player.originalRole === roleId),
       aliveWithRole: roleId => players.some(player => player.alive && getEffectiveRole(player.id) === roleId),
       amorPick: snapshot.amorPick,
@@ -138,6 +139,7 @@ export function OnlineGmController({ snapshot, sendCommand }: OnlineGmController
       snapshot.witchHealUsed,
       snapshot.witchPoisonUsed,
       snapshot.verfluchterConvertedThisNight,
+      snapshot.harterBurscheWoundedThisNight,
       snapshot.amorPick,
       players,
       getEffectiveRole,
@@ -370,6 +372,7 @@ export function OnlineGmController({ snapshot, sendCommand }: OnlineGmController
             beschuetzerLastTarget={snapshot.beschuetzerLastTarget}
             setBeschuetzerTarget={id => updateNightAction({ beschuetzerTarget: id })}
             verfluchterConvertedThisNight={snapshot.verfluchterConvertedThisNight}
+            harterBurscheWoundedThisNight={snapshot.harterBurscheWoundedThisNight}
             urwolfTransform={snapshot.urwolfTransform}
             setUrwolfTransform={value => updateNightAction({ urwolfTransform: value })}
             seerTarget={snapshot.seerTarget}

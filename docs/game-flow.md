@@ -187,7 +187,8 @@ Night steps are built dynamically each round by `buildNightSteps()` in `src/logi
 | 10 | `auraseer` | `hadRole("auraseher")` |
 | 11 | `detective` | `hadRole("detektiv")` |
 | 12 | `witch` | `hadRole("hexe")` |
-| 13 | `dawn` | Always |
+| 13 | `harterbursche` | `harterBurscheWoundedThisNight !== null` |
+| 14 | `dawn` | Always |
 
 If a role is dead or exhausted, the step still appears to preserve rhythm but shows an inactive placeholder.
 
@@ -235,6 +236,18 @@ If a role is dead or exhausted, the step still appears to preserve rhythm but sh
 - Exact-role displays use `getRoleDisplay()` so converted players show as `Werwolf (ehem. Verfluchter)`.
 - Non-wolf deaths still kill Verfluchter normally through `killPlayer()`.
 - If Beschützer protected Verfluchter, the wolf attack is prevented and no conversion happens.
+
+### Harter Bursche
+
+- Harter Bursche starts village-aligned and has no active night action.
+- If a normal wolf attack hits Harter Bursche and is not healed or protected, he stays alive, `harterBurscheWounded` stores his ID, and `harterBurscheWoundedThisNight` inserts a GM-only notification step before dawn.
+- The notification step is placed after Witch, because Witch heal in the original attack night prevents the wound entirely.
+- The current night report does not list Harter Bursche as dead unless another non-wolf effect kills him.
+- He remains alive and selectable during the following day and night. Wolves, Witch, Seher, Aura-Seher, Detektiv, Nachtgast, and Beschützer can still target him normally while the wound is pending.
+- During the next `resolveNight()`, if he is still alive, he dies from the pending wound and appears in that night report.
+- A later Witch heal or Beschützer protection can affect a new wolf attack, but does not remove the old wound.
+- If Harter Bursche dies before the delayed wound resolves, the pending wound is cleared and does not create a second death.
+- If Nachtgast visits Harter Bursche and wolves attack that host, Harter Bursche is wounded and Nachtgast is hit as collateral.
 
 ### Witch
 

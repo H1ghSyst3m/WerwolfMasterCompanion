@@ -129,6 +129,29 @@ function createRoomWithBeschuetzer(
   return manager;
 }
 
+function harterBurschePlayers(includeNachtgast = false): Player[] {
+  return [
+    { id: 1, name: "Wolf", role: "werwolf", originalRole: "werwolf", alive: true, lover: null },
+    { id: 2, name: "Harter Bursche", role: "harterbursche", originalRole: "harterbursche", alive: true, lover: null },
+    {
+      id: 3,
+      name: includeNachtgast ? "Nachtgast" : "Hexe",
+      role: includeNachtgast ? "nachtgast" : "hexe",
+      originalRole: includeNachtgast ? "nachtgast" : "hexe",
+      alive: true,
+      lover: null,
+    },
+    { id: 4, name: "Dorf 1", role: "dorfbewohner", originalRole: "dorfbewohner", alive: true, lover: null },
+    { id: 5, name: "Dorf 2", role: "dorfbewohner", originalRole: "dorfbewohner", alive: true, lover: null },
+  ];
+}
+
+function createRoomWithHarterBursche(includeNachtgast = false) {
+  const { manager } = createRoomWithPlayers();
+  send(manager, "gm", { type: "gm:setPlayers", payload: { players: harterBurschePlayers(includeNachtgast) } });
+  return manager;
+}
+
 function advanceFromSleepToWolves(manager: RoomManager): void {
   send(manager, "gm", { type: "gm:advanceNightStep" });
 }
@@ -848,6 +871,153 @@ describe("RoomManager", () => {
     expect(snapshot.players.find(player => player.id === 3)?.alive).toBe(false);
     expect(snapshot.dayDeaths.map(player => player.name)).toEqual(["Ziel"]);
     expect(snapshot.witchPoisonUsed).toBe(true);
+  });
+
+  it("adds the Harter Bursche notification before dawn after a wound", () => {
+    const baseParams = {
+      round: 1,
+      urwolfUsed: false,
+      witchHealUsed: false,
+      witchPoisonUsed: false,
+      verfluchterConvertedThisNight: null,
+      hadRole: (roleId: RoleId) => roleId === "harterbursche" || roleId === "hexe",
+      aliveWithRole: (roleId: RoleId) => roleId === "harterbursche" || roleId === "hexe",
+      amorPick: [],
+    };
+
+    expect(buildNightSteps({ ...baseParams, harterBurscheWoundedThisNight: null }).map(step => step.id))
+      .toEqual(["sleep", "wolves", "witch", "dawn"]);
+    expect(buildNightSteps({ ...baseParams, harterBurscheWoundedThisNight: 2 }).map(step => step.id))
+      .toEqual(["sleep", "wolves", "witch", "harterbursche", "dawn"]);
+  });
+
+  it("wounds Harter Bursche instead of killing them from a wolf attack", () => {
+    const { manager } = createRoomWithPlayers();
+    send(manager, "gm", { type: "gm:setPlayers", payload: { players: harterBurschePlayers() } });
+    send(manager, "gm", { type: "gm:updateNightAction", payload: { nightVictim: 2 } });
+
+    const messages = send(manager, "gm", { type: "gm:resolveNight" });
+    const snapshot = latestGmSnapshot(messages);
+    const hardGuy = snapshot.players.find(player => player.id === 2);
+    const hardGuyPlayerMessage = messages.find(
+      message => message.clientId === "p1" && message.message.type === "snapshot" && message.message.snapshot.view === "player",
+    )?.message;
+
+    expect(hardGuy?.alive).toBe(true);
+    expect(snapshot.dayDeaths).toEqual([]);
+    expect(snapshot.harterBurscheWounded).toBe(2);
+    expect(snapshot.harterBurscheWoundedThisNight).toBe(2);
+    expect(snapshot.log.map(entry => entry.text)).toContain("💪 Harter Bursche ist der Harte Bursche und überlebt den Angriff zunächst.");
+    expect(hardGuyPlayerMessage).toBeTruthy();
+    if (hardGuyPlayerMessage?.type === "snapshot" && hardGuyPlayerMessage.snapshot.view === "player") {
+      expect(hardGuyPlayerMessage.snapshot).not.toHaveProperty("harterBurscheWounded");
+    }
+  });
+
+  it("keeps Harter Bursche alive after the GM wound notification in the same night", () => {
+    const manager = createRoomWithHarterBursche();
+    send(manager, "gm", { type: "gm:advanceNightStep" });
+    send(manager, "gm", { type: "gm:updateNightAction", payload: { nightVictim: 2 } });
+    send(manager, "gm", { type: "gm:advanceNightStep" });
+
+    let snapshot = latestGmSnapshot(send(manager, "gm", { type: "gm:advanceNightStep" }));
+    expect(snapshot.harterBurscheWounded).toBe(2);
+    expect(snapshot.harterBurscheWoundedThisNight).toBe(2);
+    expect(snapshot.nightStepIdx).toBe(3);
+
+    snapshot = latestGmSnapshot(send(manager, "gm", { type: "gm:advanceNightStep" }));
+    snapshot = latestGmSnapshot(send(manager, "gm", { type: "gm:resolveNight" }));
+
+    expect(snapshot.players.find(player => player.id === 2)?.alive).toBe(true);
+    expect(snapshot.dayDeaths).toEqual([]);
+  });
+
+  it("kills wounded Harter Bursche in the next night report", () => {
+    const manager = createRoomWithHarterBursche();
+    send(manager, "gm", { type: "gm:updateNightAction", payload: { nightVictim: 2 } });
+    send(manager, "gm", { type: "gm:resolveNight" });
+    send(manager, "gm", { type: "gm:startDay" });
+    send(manager, "gm", { type: "gm:startNight" });
+
+    const snapshot = latestGmSnapshot(send(manager, "gm", { type: "gm:resolveNight" }));
+
+    expect(snapshot.players.find(player => player.id === 2)?.alive).toBe(false);
+    expect(snapshot.dayDeaths.map(player => player.name)).toEqual(["Harter Bursche"]);
+    expect(snapshot.harterBurscheWounded).toBeNull();
+    expect(snapshot.log.map(entry => entry.text)).toContain("💪 Harter Bursche stirbt an den Wunden des Werwolf-Angriffs.");
+  });
+
+  it("lets Witch heal prevent the initial Harter Bursche wound", () => {
+    const manager = createRoomWithHarterBursche();
+    send(manager, "gm", {
+      type: "gm:updateNightAction",
+      payload: { nightVictim: 2, witchHealThisRound: true },
+    });
+
+    const snapshot = latestGmSnapshot(send(manager, "gm", { type: "gm:resolveNight" }));
+
+    expect(snapshot.players.find(player => player.id === 2)?.alive).toBe(true);
+    expect(snapshot.dayDeaths).toEqual([]);
+    expect(snapshot.harterBurscheWounded).toBeNull();
+    expect(snapshot.witchHealUsed).toBe(true);
+  });
+
+  it("keeps Beschützer protection from wounding Harter Bursche", () => {
+    const manager = createRoomWithBeschuetzer("werwolf", "harterbursche");
+    send(manager, "gm", {
+      type: "gm:updateNightAction",
+      payload: { beschuetzerTarget: 3, nightVictim: 3 },
+    });
+
+    const snapshot = latestGmSnapshot(send(manager, "gm", { type: "gm:resolveNight" }));
+
+    expect(snapshot.players.find(player => player.id === 3)?.alive).toBe(true);
+    expect(snapshot.dayDeaths).toEqual([]);
+    expect(snapshot.harterBurscheWounded).toBeNull();
+  });
+
+  it("wounds Harter Bursche but still kills Nachtgast visiting them", () => {
+    const manager = createRoomWithHarterBursche(true);
+    send(manager, "gm", {
+      type: "gm:updateNightAction",
+      payload: { nachtgastTarget: 2, nightVictim: 2 },
+    });
+
+    const snapshot = latestGmSnapshot(send(manager, "gm", { type: "gm:resolveNight" }));
+
+    expect(snapshot.players.find(player => player.id === 2)?.alive).toBe(true);
+    expect(snapshot.players.find(player => player.id === 3)?.alive).toBe(false);
+    expect(snapshot.dayDeaths.map(player => player.name)).toEqual(["Nachtgast"]);
+    expect(snapshot.harterBurscheWounded).toBe(2);
+  });
+
+  it("lets wounded Harter Bursche be targeted again without changing the delayed death", () => {
+    const manager = createRoomWithHarterBursche();
+    send(manager, "gm", { type: "gm:updateNightAction", payload: { nightVictim: 2 } });
+    send(manager, "gm", { type: "gm:resolveNight" });
+    send(manager, "gm", { type: "gm:startDay" });
+    send(manager, "gm", { type: "gm:startNight" });
+    send(manager, "gm", { type: "gm:updateNightAction", payload: { nightVictim: 2, witchHealThisRound: true } });
+
+    const snapshot = latestGmSnapshot(send(manager, "gm", { type: "gm:resolveNight" }));
+
+    expect(snapshot.players.find(player => player.id === 2)?.alive).toBe(false);
+    expect(snapshot.dayDeaths.map(player => player.name)).toEqual(["Harter Bursche"]);
+    expect(snapshot.witchHealUsed).toBe(true);
+    expect(snapshot.log.map(entry => entry.text)).toContain("🧪 Hexe schützt Harter Bursche vor dem erneuten Angriff.");
+    expect(snapshot.log.map(entry => entry.text)).toContain("💪 Harter Bursche stirbt an den Wunden des Werwolf-Angriffs.");
+  });
+
+  it("clears a pending Harter Bursche wound when the village executes them", () => {
+    const manager = createRoomWithHarterBursche();
+    send(manager, "gm", { type: "gm:updateNightAction", payload: { nightVictim: 2 } });
+    send(manager, "gm", { type: "gm:resolveNight" });
+    send(manager, "gm", { type: "gm:startDay" });
+
+    const snapshot = latestGmSnapshot(send(manager, "gm", { type: "gm:dayVote", payload: { playerId: 2 } }));
+
+    expect(snapshot.players.find(player => player.id === 2)?.alive).toBe(false);
+    expect(snapshot.harterBurscheWounded).toBeNull();
   });
 
   it("converts Verfluchter when wolves attack instead of killing them", () => {

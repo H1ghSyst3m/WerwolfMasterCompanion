@@ -78,6 +78,8 @@ function serializeRuntime(room: ServerRoom): Omit<OnlineGmSnapshot, "view" | "ro
     beschuetzerTarget: room.beschuetzerTarget,
     beschuetzerLastTarget: room.beschuetzerLastTarget,
     verfluchterConvertedThisNight: room.verfluchterConvertedThisNight,
+    harterBurscheWounded: room.harterBurscheWounded,
+    harterBurscheWoundedThisNight: room.harterBurscheWoundedThisNight,
     urwolfTransform: room.urwolfTransform,
     urwolfUsed: room.urwolfUsed,
     seerTarget: room.seerTarget,

@@ -70,6 +70,44 @@ export function getWolfAttackConvertedVerfluchter(ps: Player[], nightVictim: num
   return ps.find(p => p.id === nightVictim && p.alive && p.role === "verfluchter") ?? null;
 }
 
+export interface HarterBurscheWolfAttackOpts {
+  nachtgastTarget: number | null;
+  beschuetzerTarget: number | null;
+  verfluchterConvertedThisNight: number | null;
+  urwolfTransform: boolean | null;
+  witchHealThisRound: boolean;
+  harterBurscheWounded: number | null;
+}
+
+export function getHarterBurscheWoundedByWolfAttack(
+  ps: Player[],
+  nightVictim: number | null,
+  {
+    nachtgastTarget,
+    beschuetzerTarget,
+    verfluchterConvertedThisNight,
+    urwolfTransform,
+    witchHealThisRound,
+    harterBurscheWounded,
+  }: HarterBurscheWolfAttackOpts,
+): Player | null {
+  if (nightVictim === null || harterBurscheWounded === nightVictim) return null;
+  const victim = ps.find(p => p.id === nightVictim && p.alive && p.role === "harterbursche");
+  if (!victim) return null;
+  if (isNachtgastAwayFromWolfAttack(ps, nightVictim, nachtgastTarget)) return null;
+  const wolfAttackProtected =
+    nightVictim === beschuetzerTarget &&
+    nightVictim !== verfluchterConvertedThisNight;
+  if (wolfAttackProtected || nightVictim === verfluchterConvertedThisNight) return null;
+  if (urwolfTransform || witchHealThisRound) return null;
+  return victim;
+}
+
+export function clearHarterBurscheWoundForDeadPlayer(ps: Player[], woundedPlayerId: number | null): number | null {
+  if (woundedPlayerId === null) return null;
+  return ps.some(p => p.id === woundedPlayerId && p.alive) ? woundedPlayerId : null;
+}
+
 export function convertPlayerToWerewolf(ps: Player[], playerId: number): Player[] {
   return ps.map(p => p.id === playerId ? { ...p, role: "werwolf" as RoleId } : p);
 }
