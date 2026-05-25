@@ -21,7 +21,7 @@ export function NightStepHarterBursche({
           {woundedPlayer?.name ?? "Der Harte Bursche"} wurde von den Werwölfen getroffen.
         </p>
         <p className="text-sm text-gray-300">
-          Tippe die Person leise an. Sie lebt noch diesen Tag und stirbt im nächsten Nachtbericht an ihren Wunden.
+          Tippe die Person leise an. Sie spielt den nächsten Tag noch mit und stirbt beim darauffolgenden Tagesanbruch an ihren Wunden.
         </p>
       </div>
       <Btn onClick={advanceNightStep} cls="bg-purple-600 hover:bg-purple-500 text-white w-full" size="lg">

@@ -117,7 +117,7 @@ export const ROLES: Record<RoleId, Role> = {
     team: "village",
     cat: "special",
     unique: true,
-    desc: "Überlebt einen ungeheilten Werwolf-Angriff zunächst. Er bleibt noch einen Tag am Leben und stirbt erst im nächsten Nachtbericht an seinen Wunden.",
+    desc: "Wird er nachts von den Werwölfen angegriffen und nicht gerettet, stirbt er nicht sofort. Die Spielleitung informiert ihn heimlich. Er spielt den nächsten Tag noch mit und stirbt beim darauffolgenden Tagesanbruch an seinen Wunden.",
   },
 };
 

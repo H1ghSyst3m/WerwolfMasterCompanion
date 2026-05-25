@@ -212,5 +212,5 @@ Harter Bursche wounds are server-owned in Online Mode:
 - When an unprotected, unhealed wolf attack hits Harter Bursche, the server stores `harterBurscheWounded` and inserts a GM-only `harterbursche` notification step before dawn.
 - The GM snapshot includes the wound fields and the log entry; player snapshots do not expose pending wound state.
 - The GM quietly informs the player. The player remains alive and selectable until the next night resolves.
-- If the wounded player is still alive in the next night resolution, the server kills them and includes them in that night report.
+- If the wounded player is still alive in the next night resolution, the server kills them at the following dawn.
 - Reset to lobby clears both Harter-Bursche wound fields. New nights clear only `harterBurscheWoundedThisNight`, preserving the pending delayed death.

@@ -137,7 +137,7 @@ export function buildNightSteps({
       id: "harterbursche",
       title: "Harten Burschen informieren",
       icon: "💪",
-      desc: "Informiere den Harten Burschen leise: Er wurde getroffen und stirbt im nächsten Nachtbericht.",
+      desc: "Informiere den Harten Burschen leise: Er wurde getroffen, spielt den nächsten Tag noch mit und stirbt beim darauffolgenden Tagesanbruch.",
       active: true,
     });
   }

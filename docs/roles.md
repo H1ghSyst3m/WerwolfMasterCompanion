@@ -147,7 +147,7 @@ interface Role {
 ### 💪 Harter Bursche (*unique*)
 - **Team:** Village
 - **Night:** No active night action.
-- **Wolf attack:** If wolves attack Harter Bursche directly and the attack is not protected or healed, he does not die in that morning's report. He is marked as wounded and dies in the next night report.
+- **Wolf attack:** If wolves attack Harter Bursche directly and the attack is not protected or healed, he does not die right away. He is marked as wounded, secretly informed by the GM, keeps playing through the next day, and dies at the following dawn.
 - **GM notification step:** A GM-only `harterbursche` notification step appears right before dawn after the Witch step, because Witch heal can still prevent the wound.
 - **Information:** GM sees the wound and informs the player quietly. Player snapshots do not expose the wound state. Wolves only know their chosen target survived.
 - **Next night:** Harter Bursche remains alive and selectable for wolves and other roles until the next night resolves. A second wolf attack, protection, or Witch heal in that later night does not prevent the old wound death.
