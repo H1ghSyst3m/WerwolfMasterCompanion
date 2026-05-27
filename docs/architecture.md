@@ -117,6 +117,7 @@ src/
     │   ├── NightStepAuraSeer.tsx # Aura-Seher: pick + reveal team
     │   ├── NightStepDetective.tsx # Detektiv: compare two players
     │   ├── NightStepWitch.tsx   # Hexe: heal / poison
+    │   ├── NightStepHarterBursche.tsx # GM-only notification after Harter Bursche wound
     │   └── NightStepDawn.tsx    # "Nacht auswerten" button
     │
     ├── day/

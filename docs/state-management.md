@@ -54,6 +54,8 @@ All state specific to a single night's actions. Per-night state is cleared via `
 | `beschuetzerTarget` | `number \| null` | ID of the player Beschützer protects this night |
 | `beschuetzerLastTarget` | `number \| null` | ID of the player Beschützer protected on the previous resolved night |
 | `verfluchterConvertedThisNight` | `number \| null` | ID of a Verfluchter converted by wolves this night, used for the GM notification step and same-night role effects |
+| `harterBurscheWounded` | `number \| null` | ID of a Harter Bursche carrying a delayed wolf-attack wound |
+| `harterBurscheWoundedThisNight` | `number \| null` | ID of a Harter Bursche newly wounded this night, used for the GM notification step |
 | `urwolfTransform` | `boolean \| null` | Whether Urwolf chose to transform this night |
 | `urwolfUsed` | `boolean` | Whether the Urwolf ability has been used ever |
 | `seerTarget` | `number \| null` | Player the Seher inspected |
@@ -69,7 +71,7 @@ All state specific to a single night's actions. Per-night state is cleared via `
 | `amorPick` | `number[]` | IDs of the two lovers, set in night 1 only |
 | `nightResolved` | `boolean` | Whether `resolveNight()` has run for this night |
 
-`resetNightActions()` resets all per-night fields except `beschuetzerLastTarget`, `urwolfUsed`, `witchHealUsed`, `witchPoisonUsed`, and `amorPick`, which persist across nights.
+`resetNightActions()` resets all per-night fields except `beschuetzerLastTarget`, `harterBurscheWounded`, `urwolfUsed`, `witchHealUsed`, `witchPoisonUsed`, and `amorPick`, which persist across nights.
 
 ### `useTriggerQueue` - `src/hooks/useTriggerQueue.ts`
 

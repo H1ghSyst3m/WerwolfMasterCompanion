@@ -11,6 +11,7 @@ import { NightStepSeer } from "./NightStepSeer";
 import { NightStepAuraSeer } from "./NightStepAuraSeer";
 import { NightStepDetective } from "./NightStepDetective";
 import { NightStepWitch } from "./NightStepWitch";
+import { NightStepHarterBursche } from "./NightStepHarterBursche";
 import { NightStepDawn } from "./NightStepDawn";
 import { isNachtgastAwayFromWolfAttack } from "../../logic/gameLogic";
 import type { Dispatch, SetStateAction } from "react";
@@ -34,6 +35,7 @@ interface NightPhaseProps {
   beschuetzerLastTarget: number | null;
   setBeschuetzerTarget: (id: number) => void;
   verfluchterConvertedThisNight: number | null;
+  harterBurscheWoundedThisNight: number | null;
   urwolfTransform: boolean | null;
   setUrwolfTransform: (v: boolean) => void;
   seerTarget: number | null;
@@ -78,6 +80,7 @@ export function NightPhase({
   beschuetzerLastTarget,
   setBeschuetzerTarget,
   verfluchterConvertedThisNight,
+  harterBurscheWoundedThisNight,
   urwolfTransform,
   setUrwolfTransform,
   seerTarget,
@@ -126,6 +129,10 @@ export function NightPhase({
     }
     if (stepId === "verfluchter") {
       const matching = players.filter(p => p.id === verfluchterConvertedThisNight);
+      return matching.length === 0 ? null : matching;
+    }
+    if (stepId === "harterbursche") {
+      const matching = players.filter(p => p.id === harterBurscheWoundedThisNight);
       return matching.length === 0 ? null : matching;
     }
     const roles = roleMap[stepId];
@@ -331,6 +338,14 @@ export function NightPhase({
           setWitchHealThisRound={setWitchHealThisRound}
           witchPoisonTarget={witchPoisonTarget}
           setWitchPoisonTarget={setWitchPoisonTarget}
+          advanceNightStep={advanceNightStep}
+        />
+      )}
+
+      {currentNightStep.active && currentNightStep.id === "harterbursche" && (
+        <NightStepHarterBursche
+          players={players}
+          woundedPlayerId={harterBurscheWoundedThisNight}
           advanceNightStep={advanceNightStep}
         />
       )}

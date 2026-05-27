@@ -13,7 +13,8 @@ export type RoleId =
   | "urwolf"
   | "nachtgast"
   | "beschuetzer"
-  | "verfluchter";
+  | "verfluchter"
+  | "harterbursche";
 
 // Role definition
 export interface Role {
@@ -112,6 +113,7 @@ export type NightStepId =
   | "auraseer"
   | "detective"
   | "witch"
+  | "harterbursche"
   | "dawn";
 
 export interface NightStep {
@@ -150,6 +152,8 @@ export interface SaveState {
   beschuetzerTarget: number | null;
   beschuetzerLastTarget: number | null;
   verfluchterConvertedThisNight: number | null;
+  harterBurscheWounded: number | null;
+  harterBurscheWoundedThisNight: number | null;
   urwolfTransform: boolean | null;
   urwolfUsed: boolean;
   seerTarget: number | null;

@@ -68,6 +68,20 @@ function isSaveState(v: unknown): v is SaveState {
     !Number.isInteger(s.verfluchterConvertedThisNight) ||
     s.verfluchterConvertedThisNight < 0
   )) return false;
+  if (s.harterBurscheWounded === undefined) s.harterBurscheWounded = null;
+  if (s.harterBurscheWounded !== null && (
+    typeof s.harterBurscheWounded !== "number" ||
+    !Number.isFinite(s.harterBurscheWounded) ||
+    !Number.isInteger(s.harterBurscheWounded) ||
+    s.harterBurscheWounded < 0
+  )) return false;
+  if (s.harterBurscheWoundedThisNight === undefined) s.harterBurscheWoundedThisNight = null;
+  if (s.harterBurscheWoundedThisNight !== null && (
+    typeof s.harterBurscheWoundedThisNight !== "number" ||
+    !Number.isFinite(s.harterBurscheWoundedThisNight) ||
+    !Number.isInteger(s.harterBurscheWoundedThisNight) ||
+    s.harterBurscheWoundedThisNight < 0
+  )) return false;
   if (s.urwolfTransform !== null && typeof s.urwolfTransform !== "boolean") return false;
   if (typeof s.urwolfUsed !== "boolean") return false;
   if (s.seerTarget !== null && (typeof s.seerTarget !== "number" || !Number.isFinite(s.seerTarget) || !Number.isInteger(s.seerTarget) || s.seerTarget < 0)) return false;

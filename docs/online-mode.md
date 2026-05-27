@@ -204,3 +204,13 @@ Verfluchter conversion is owned by the server:
 - The GM snapshot includes `verfluchterConvertedThisNight`, the log entry, and the inserted GM-only notification step.
 - Player snapshots still do not include logs. The converted player sees the updated private role card as `Werwolf (ehem. Verfluchter)`.
 - Reset to lobby and new nights clear `verfluchterConvertedThisNight` with the rest of per-night state.
+
+## Harter Bursche Online Behavior
+
+Harter Bursche wounds are server-owned in Online Mode:
+
+- When an unprotected, unhealed wolf attack hits Harter Bursche, the server stores `harterBurscheWounded` and inserts a GM-only `harterbursche` notification step before dawn.
+- The GM snapshot includes the wound fields and the log entry; player snapshots do not expose pending wound state.
+- The GM quietly informs the player. The player remains alive and selectable until the next night resolves.
+- If the wounded player is still alive in the next night resolution, the server kills them at the following dawn.
+- Reset to lobby clears both Harter-Bursche wound fields. New nights clear only `harterBurscheWoundedThisNight`, preserving the pending delayed death.

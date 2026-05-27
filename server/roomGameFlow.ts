@@ -2,7 +2,9 @@ import { assignManualRoles, resetNightActions } from "../src/domain/gameState";
 import { buildNightSteps } from "../src/logic/nightSteps";
 import {
   checkWin,
+  clearHarterBurscheWoundForDeadPlayer,
   convertPlayerToWerewolf,
+  getHarterBurscheWoundedByWolfAttack,
   getNachtgastCollateralVictim,
   getWolfAttackConvertedVerfluchter,
   isNachtgastAwayFromWolfAttack,
@@ -124,6 +126,22 @@ export function advanceNightStep(room: ServerRoom): void {
       addLogText(room, `⛓️ ${converted.name} war verflucht und wird zum Werwolf.`);
     }
   }
+  const nextStep = steps[room.nightStepIdx + 1];
+  if (nextStep?.id === "dawn" && room.harterBurscheWoundedThisNight === null) {
+    const wounded = getHarterBurscheWoundedByWolfAttack(room.players, room.nightVictim, {
+      nachtgastTarget: room.nachtgastTarget,
+      beschuetzerTarget: room.beschuetzerTarget,
+      verfluchterConvertedThisNight: room.verfluchterConvertedThisNight,
+      urwolfTransform: room.urwolfTransform,
+      witchHealThisRound: room.witchHealThisRound,
+      harterBurscheWounded: room.harterBurscheWounded,
+    });
+    if (wounded) {
+      room.harterBurscheWounded = wounded.id;
+      room.harterBurscheWoundedThisNight = wounded.id;
+      addLogText(room, `💪 ${wounded.name} ist der Harte Bursche und überlebt den Angriff zunächst.`);
+    }
+  }
   room.seerTarget = null;
   room.seerRevealed = false;
   room.auraSeerTarget = null;
@@ -136,6 +154,9 @@ export function advanceNightStep(room: ServerRoom): void {
 export function resolveNight(room: ServerRoom): void {
   let updatedPlayers: ServerRoomPlayer[] = [...room.players];
   const allTriggers: ReturnType<typeof killPlayer>["triggers"] = [];
+  const woundedAtNightStart = room.harterBurscheWoundedThisNight === room.harterBurscheWounded
+    ? null
+    : room.harterBurscheWounded;
   const nachtgastMissed = isNachtgastAwayFromWolfAttack(updatedPlayers, room.nightVictim, room.nachtgastTarget);
   const nachtgastCollateral = getNachtgastCollateralVictim(updatedPlayers, room.nightVictim, room.nachtgastTarget);
   const wolfAttackProtected =
@@ -155,6 +176,25 @@ export function resolveNight(room: ServerRoom): void {
   const verfluchterConverted =
     !wolfAttackProtected && convertedVerfluchterId !== null && convertedVerfluchterId === room.nightVictim;
   const witchHealApplies = room.witchHealThisRound && !verfluchterConverted && !wolfAttackProtected;
+  const wolfVictimAlreadyWoundedHarterBursche =
+    woundedAtNightStart !== null &&
+    room.nightVictim === woundedAtNightStart &&
+    updatedPlayers.some(player => player.id === woundedAtNightStart && player.alive && player.role === "harterbursche");
+  const newlyWoundedHarterBursche = room.harterBurscheWoundedThisNight !== null
+    ? updatedPlayers.find(player => player.id === room.harterBurscheWoundedThisNight && player.alive) ?? null
+    : getHarterBurscheWoundedByWolfAttack(updatedPlayers, room.nightVictim, {
+        nachtgastTarget: room.nachtgastTarget,
+        beschuetzerTarget: room.beschuetzerTarget,
+        verfluchterConvertedThisNight: convertedVerfluchterId,
+        urwolfTransform: room.urwolfTransform,
+        witchHealThisRound: witchHealApplies,
+        harterBurscheWounded: room.harterBurscheWounded,
+      });
+  if (newlyWoundedHarterBursche && room.harterBurscheWoundedThisNight === null) {
+    room.harterBurscheWounded = newlyWoundedHarterBursche.id;
+    room.harterBurscheWoundedThisNight = newlyWoundedHarterBursche.id;
+    addLogText(room, `💪 ${newlyWoundedHarterBursche.name} ist der Harte Bursche und überlebt den Angriff zunächst.`);
+  }
 
   const killNachtgastCollateral = () => {
     if (!nachtgastCollateral || !updatedPlayers.find(player => player.id === nachtgastCollateral.id)?.alive) return;
@@ -186,6 +226,14 @@ export function resolveNight(room: ServerRoom): void {
   } else if (room.nightVictim !== null && nachtgastMissed) {
     const victim = updatedPlayers.find(player => player.id === room.nightVictim);
     addLogText(room, `🐺 Die Werwölfe finden ${victim?.name ?? "<unbekannt>"} nicht zu Hause.`);
+  } else if (wolfVictimAlreadyWoundedHarterBursche) {
+    if (witchHealApplies) {
+      const victim = updatedPlayers.find(player => player.id === room.nightVictim);
+      addLogText(room, `🧪 Hexe schützt ${victim?.name ?? "<unbekannt>"} vor dem erneuten Angriff.`);
+    }
+    killNachtgastCollateral();
+  } else if (newlyWoundedHarterBursche) {
+    killNachtgastCollateral();
   } else if (room.nightVictim !== null && !witchHealApplies) {
     const victim = updatedPlayers.find(player => player.id === room.nightVictim);
     addLogText(room, `🐺 ${victim?.name ?? "<unbekannt>"} wurde von den Werwölfen getötet.`);
@@ -207,9 +255,25 @@ export function resolveNight(room: ServerRoom): void {
     result.logs.forEach(log => addLogText(room, log));
     allTriggers.push(...result.triggers);
   }
+  if (woundedAtNightStart !== null) {
+    const wounded = updatedPlayers.find(player => player.id === woundedAtNightStart && player.alive);
+    if (wounded) {
+      addLogText(room, `💪 ${wounded.name} stirbt an den Wunden des Werwolf-Angriffs.`);
+      const result = killPlayer(wounded.id, "Harter Bursche", updatedPlayers);
+      updatedPlayers = mergePublicPlayers(room, result.players);
+      result.logs.forEach(log => addLogText(room, log));
+      allTriggers.push(...result.triggers);
+    }
+  }
   if (witchHealApplies) room.witchHealUsed = true;
   if (room.witchPoisonTarget !== null) room.witchPoisonUsed = true;
   room.beschuetzerLastTarget = room.beschuetzerTarget;
+  const trackedWounded = newlyWoundedHarterBursche?.id ?? room.harterBurscheWounded;
+  const survivingWounded = clearHarterBurscheWoundForDeadPlayer(updatedPlayers, trackedWounded);
+  room.harterBurscheWounded = survivingWounded;
+  if (room.harterBurscheWoundedThisNight !== null && survivingWounded !== room.harterBurscheWoundedThisNight) {
+    room.harterBurscheWoundedThisNight = null;
+  }
   room.dayDeaths = updatedPlayers.filter(
     player => !player.alive && room.players.find(previous => previous.id === player.id)?.alive,
   );
@@ -236,6 +300,8 @@ export function resolveHunter(room: ServerRoom, targetId: number | null): void {
     result.logs.forEach(log => addLogText(room, log));
     const newDeaths = updatedPlayers.filter(player => !player.alive && beforeKill.find(previous => previous.id === player.id)?.alive);
     room.dayDeaths = [...room.dayDeaths, ...newDeaths];
+    room.harterBurscheWounded = clearHarterBurscheWoundForDeadPlayer(updatedPlayers, room.harterBurscheWounded);
+    room.harterBurscheWoundedThisNight = clearHarterBurscheWoundForDeadPlayer(updatedPlayers, room.harterBurscheWoundedThisNight);
     room.players = updatedPlayers;
     room.triggerQueue = [...remaining, ...result.triggers];
   } else {
@@ -282,6 +348,8 @@ export function dayVote(room: ServerRoom, playerId: number | undefined): void {
   const result = killPlayer(playerId, "Abstimmung", room.players);
   result.logs.forEach(log => addLogText(room, log));
   room.players = mergePublicPlayers(room, result.players);
+  room.harterBurscheWounded = clearHarterBurscheWoundForDeadPlayer(room.players, room.harterBurscheWounded);
+  room.harterBurscheWoundedThisNight = clearHarterBurscheWoundForDeadPlayer(room.players, room.harterBurscheWoundedThisNight);
   room.dayVoteDone = true;
   room.dayVoteVictimId = player.id;
   if (result.triggers.length > 0) {
@@ -328,6 +396,7 @@ function nightSteps(room: ServerRoom) {
     witchHealUsed: room.witchHealUsed,
     witchPoisonUsed: room.witchPoisonUsed,
     verfluchterConvertedThisNight: room.verfluchterConvertedThisNight,
+    harterBurscheWoundedThisNight: room.harterBurscheWoundedThisNight,
     hadRole: roleId => room.players.some(player => player.originalRole === roleId),
     aliveWithRole: roleId => room.players.some(player => player.alive && player.role === roleId),
     amorPick: room.amorPick,

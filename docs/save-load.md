@@ -88,6 +88,8 @@ interface SaveState {
   beschuetzerTarget: number | null;
   beschuetzerLastTarget: number | null;
   verfluchterConvertedThisNight: number | null;
+  harterBurscheWounded: number | null;
+  harterBurscheWoundedThisNight: number | null;
   urwolfTransform: boolean | null;
   urwolfUsed: boolean;
   seerTarget: number | null;

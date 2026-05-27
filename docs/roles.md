@@ -144,6 +144,19 @@ interface Role {
 - **Beschützer interaction:** If Verfluchter is protected, the wolf attack is prevented and no conversion happens.
 - **Other deaths:** Day vote, Witch poison, Hunter shot, lover chain, and other non-wolf effects kill Verfluchter normally.
 
+### 💪 Harter Bursche (*unique*)
+- **Team:** Village
+- **Night:** No active night action.
+- **Wolf attack:** If wolves attack Harter Bursche directly and the attack is not protected or healed, he does not die right away. He is marked as wounded, secretly informed by the GM, keeps playing through the next day, and dies at the following dawn.
+- **GM notification step:** A GM-only `harterbursche` notification step appears right before dawn after the Witch step, because Witch heal can still prevent the wound.
+- **Information:** GM sees the wound and informs the player quietly. Player snapshots do not expose the wound state. Wolves only know their chosen target survived.
+- **Next night:** Harter Bursche remains alive and selectable for wolves and other roles until the next night resolves. A second wolf attack, protection, or Witch heal in that later night does not prevent the old wound death.
+- **Hexe interaction:** Witch sees Harter Bursche as the normal wolf victim. Healing in the original attack night prevents the wound completely. Healing in the following night only protects against a new attack, not the old wound.
+- **Beschützer interaction:** If Beschützer protects Harter Bursche in the original attack night, no wound is created.
+- **Nachtgast interaction:** If Nachtgast visits Harter Bursche and wolves attack that host, Harter Bursche is wounded while Nachtgast is hit as collateral.
+- **Urwolf interaction:** If Urwolf transforms Harter Bursche instead of killing him, no new wound is created. Existing wounds are not removed by later transformations.
+- **Other deaths:** Day vote, Witch poison, Hunter shot, lover chain, and other non-wolf effects kill Harter Bursche normally and clear any pending wound.
+
 ---
 
 ## RoleId Type
@@ -152,7 +165,7 @@ interface Role {
 type RoleId =
   | "werwolf" | "dorfbewohner" | "seher" | "hexe" | "jaeger"
   | "amor" | "narr" | "dorftrottel" | "auraseher" | "detektiv" | "urwolf"
-  | "nachtgast" | "beschuetzer" | "verfluchter";
+  | "nachtgast" | "beschuetzer" | "verfluchter" | "harterbursche";
 ```
 
 ---
@@ -174,3 +187,4 @@ type RoleId =
 | narr | No night step |
 | dorftrottel | No night step |
 | verfluchter | No active night step; GM notification appears only when `verfluchterConvertedThisNight !== null` |
+| harterbursche | No active night step; GM notification appears only when `harterBurscheWoundedThisNight !== null` |

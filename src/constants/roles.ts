@@ -111,6 +111,14 @@ export const ROLES: Record<RoleId, Role> = {
     unique: true,
     desc: "Startet auf der Seite des Dorfes. Wird er von den Werwölfen angegriffen, stirbt er nicht, sondern wird heimlich zum Werwolf.",
   },
+  harterbursche: {
+    name: "Harter Bursche",
+    icon: "💪",
+    team: "village",
+    cat: "special",
+    unique: true,
+    desc: "Wird er nachts von den Werwölfen angegriffen und nicht gerettet, stirbt er nicht sofort. Die Spielleitung informiert ihn heimlich. Er spielt den nächsten Tag noch mit und stirbt beim darauffolgenden Tagesanbruch an seinen Wunden.",
+  },
 };
 
 export const ROLE_IDS = Object.keys(ROLES) as RoleId[];
