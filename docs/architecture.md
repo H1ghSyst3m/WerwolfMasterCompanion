@@ -109,6 +109,7 @@ src/
     │   ├── NightStepWolves.tsx  # Wolf victim selection
     │   ├── NightStepVerfluchter.tsx # GM-only notification after Verfluchter conversion
     │   ├── NightStepUrwolf.tsx  # Urwolf: kill vs transform
+    │   ├── NightStepUrwolfInfo.tsx # GM-only notification after Urwolf transform
     │   ├── NightStepNachtgast.tsx # Nachtgast: pick a host before wolves
     │   ├── NightStepBeschuetzer.tsx # Beschützer: protect one player before wolves
     │   ├── NightStepAmor.tsx    # Amor: pick lovers

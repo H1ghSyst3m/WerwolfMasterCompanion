@@ -103,6 +103,7 @@ interface Role {
 - **Team:** Wolf
 - **Night:** Wakes after the wolves. Has a **one-time ability** to transform the wolf victim into a Werwolf instead of killing them.
 - **On transform:** `player.role` changes to `"werwolf"`. `player.originalRole` is not touched and remains the victim's original starting role (e.g. `"dorfbewohner"` or `"seher"`). The game-over screen (GameOver component) shows the original role alongside the current role when they differ.
+- **Notification step:** After a valid transform choice, a GM-only `urwolfinfo` step appears so the GM can quietly inform the transformed player.
 - **On normal kill:** Ability not used; `urwolfUsed` stays false.
 - **Once used:** The `urwolf` night step is no longer active (shows inactive placeholder).
 - **Edge case:** If the Urwolf is transforming a player, the Hexe's heal option is hidden (nothing to heal). The Seher and Aura-Seher see the target as a wolf (via `getEffectiveRole()`/`getEffectiveTeam()`).
@@ -184,6 +185,7 @@ type RoleId =
 | auraseher | `aliveWithRole("auraseher")` |
 | detektiv | `aliveWithRole("detektiv")` |
 | urwolf | `aliveWithRole("urwolf") && !urwolfUsed` |
+| urwolfinfo | Successful Urwolf transform target exists |
 | narr | No night step |
 | dorftrottel | No night step |
 | verfluchter | No active night step; GM notification appears only when `verfluchterConvertedThisNight !== null` |

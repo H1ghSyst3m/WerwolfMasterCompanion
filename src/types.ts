@@ -109,6 +109,7 @@ export type NightStepId =
   | "wolves"
   | "verfluchter"
   | "urwolf"
+  | "urwolfinfo"
   | "seer"
   | "auraseer"
   | "detective"

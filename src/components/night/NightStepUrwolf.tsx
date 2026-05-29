@@ -7,7 +7,7 @@ interface NightStepUrwolfProps {
   verfluchterConvertedThisNight: number | null;
   players: Player[];
   setUrwolfTransform: (v: boolean) => void;
-  advanceNightStep: () => void;
+  advanceNightStep: (urwolfTransformOverride?: boolean | null) => void;
 }
 
 export function NightStepUrwolf({
@@ -30,7 +30,7 @@ export function NightStepUrwolf({
               Der Verfluchte wurde bereits durch den Angriff zum Werwolf. Der Urwolf kann dieses Opfer nicht zusätzlich verwandeln.
             </p>
           </div>
-          <Btn onClick={advanceNightStep} cls="bg-indigo-600 hover:bg-indigo-500 text-white w-full" size="lg">
+          <Btn onClick={() => advanceNightStep()} cls="bg-indigo-600 hover:bg-indigo-500 text-white w-full" size="lg">
             Weiter →
           </Btn>
         </div>
@@ -47,7 +47,7 @@ export function NightStepUrwolf({
               Der Beschützer verhindert den Angriff. Der Urwolf kann dieses Opfer nicht verwandeln.
             </p>
           </div>
-          <Btn onClick={advanceNightStep} cls="bg-indigo-600 hover:bg-indigo-500 text-white w-full" size="lg">
+          <Btn onClick={() => advanceNightStep()} cls="bg-indigo-600 hover:bg-indigo-500 text-white w-full" size="lg">
             Weiter →
           </Btn>
         </div>
@@ -62,14 +62,14 @@ export function NightStepUrwolf({
         </div>
         <div className="flex gap-2">
           <Btn
-            onClick={() => { setUrwolfTransform(false); advanceNightStep(); }}
+            onClick={() => { setUrwolfTransform(false); advanceNightStep(false); }}
             cls="flex-1 bg-gray-700 hover:bg-gray-600 text-white"
             size="lg"
           >
             💀 Normal töten
           </Btn>
           <Btn
-            onClick={() => { setUrwolfTransform(true); advanceNightStep(); }}
+            onClick={() => { setUrwolfTransform(true); advanceNightStep(true); }}
             cls="flex-1 bg-red-700 hover:bg-red-600 text-white"
             size="lg"
           >
@@ -86,7 +86,7 @@ export function NightStepUrwolf({
   return (
     <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 text-center">
       <p className="text-gray-400">Kein Opfer gewählt. Überspringen.</p>
-      <Btn onClick={advanceNightStep} cls="bg-indigo-600 hover:bg-indigo-500 text-white w-full mt-3" size="lg">
+      <Btn onClick={() => advanceNightStep()} cls="bg-indigo-600 hover:bg-indigo-500 text-white w-full mt-3" size="lg">
         Weiter →
       </Btn>
     </div>

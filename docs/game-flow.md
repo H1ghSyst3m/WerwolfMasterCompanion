@@ -183,12 +183,13 @@ Night steps are built dynamically each round by `buildNightSteps()` in `src/logi
 | 6 | `wolves` | Always |
 | 7 | `verfluchter` | `verfluchterConvertedThisNight !== null` |
 | 8 | `urwolf` | `hadRole("urwolf")` |
-| 9 | `seer` | `hadRole("seher")` |
-| 10 | `auraseer` | `hadRole("auraseher")` |
-| 11 | `detective` | `hadRole("detektiv")` |
-| 12 | `witch` | `hadRole("hexe")` |
-| 13 | `harterbursche` | `harterBurscheWoundedThisNight !== null` |
-| 14 | `dawn` | Always |
+| 9 | `urwolfinfo` | Successful Urwolf transform target exists |
+| 10 | `seer` | `hadRole("seher")` |
+| 11 | `auraseer` | `hadRole("auraseher")` |
+| 12 | `detective` | `hadRole("detektiv")` |
+| 13 | `witch` | `hadRole("hexe")` |
+| 14 | `harterbursche` | `harterBurscheWoundedThisNight !== null` |
+| 15 | `dawn` | Always |
 
 If a role is dead or exhausted, the step still appears to preserve rhythm but shows an inactive placeholder.
 
@@ -202,6 +203,7 @@ If a role is dead or exhausted, the step still appears to preserve rhythm but sh
 - Wolf-aligned players and valid victims are derived through effective-team logic, so in-progress Urwolf transformations are handled consistently.
 - If Urwolf is alive and has not used the ability, the `urwolf` step follows immediately.
 - The Urwolf player decides: **kill** (normal) or **transform** (victim becomes a Werwolf, Urwolf ability consumed).
+- If the transform is valid, the GM-only `urwolfinfo` step follows immediately so the GM can quietly inform the transformed player.
 - Transformation is processed in `resolveNight()`, changes the victim's current role to `"werwolf"`, and updates `urwolfUsed = true`.
 - `originalRole` remains the victim's starting role so the game-over screen can show the original/current role difference.
 - If the wolf victim was Verfluchter, conversion happens when advancing out of `wolves`, before Urwolf and seer-style steps. The Urwolf step still appears if the Urwolf exists and is unused, but it is blocked for that target and the ability remains available.

@@ -70,6 +70,35 @@ export function getWolfAttackConvertedVerfluchter(ps: Player[], nightVictim: num
   return ps.find(p => p.id === nightVictim && p.alive && p.role === "verfluchter") ?? null;
 }
 
+export interface UrwolfTransformTargetOpts {
+  nightVictim: number | null;
+  nachtgastTarget: number | null;
+  beschuetzerTarget: number | null;
+  verfluchterConvertedThisNight: number | null;
+  urwolfTransform: boolean | null;
+}
+
+export function getUrwolfTransformTarget(
+  ps: Player[],
+  {
+    nightVictim,
+    nachtgastTarget,
+    beschuetzerTarget,
+    verfluchterConvertedThisNight,
+    urwolfTransform,
+  }: UrwolfTransformTargetOpts,
+): Player | null {
+  if (!urwolfTransform || nightVictim === null) return null;
+  const victim = ps.find(p => p.id === nightVictim && p.alive);
+  if (!victim) return null;
+  if (isNachtgastAwayFromWolfAttack(ps, nightVictim, nachtgastTarget)) return null;
+  const wolfAttackProtected =
+    nightVictim === beschuetzerTarget &&
+    nightVictim !== verfluchterConvertedThisNight;
+  if (wolfAttackProtected || nightVictim === verfluchterConvertedThisNight) return null;
+  return victim;
+}
+
 export interface HarterBurscheWolfAttackOpts {
   nachtgastTarget: number | null;
   beschuetzerTarget: number | null;

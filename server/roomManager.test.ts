@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { getEffectiveTeamForRoom, RoomManager } from "./roomManager";
 import { isClientMessage } from "../src/online/messages";
 import { assignManualRoles, buildRolePool, roleCountTotal } from "../src/domain/gameState";
-import { checkWin, getTeam } from "../src/logic/gameLogic";
+import { checkWin, getTeam, getUrwolfTransformTarget } from "../src/logic/gameLogic";
 import { buildNightSteps } from "../src/logic/nightSteps";
 import { ROLES } from "../src/constants/roles";
 import type { OnlineGmSnapshot, OnlinePlayerSnapshot, OnlineSession } from "../src/online/messages";
@@ -602,6 +602,64 @@ describe("RoomManager", () => {
       .toEqual(["sleep", "wolves", "urwolf", "dawn"]);
     expect(buildNightSteps({ ...baseParams, verfluchterConvertedThisNight: 2 }).map(step => step.id))
       .toEqual(["sleep", "wolves", "verfluchter", "urwolf", "dawn"]);
+  });
+
+  it("adds the Urwolf transform notification directly after a successful transform", () => {
+    const baseParams = {
+      round: 1,
+      urwolfUsed: false,
+      witchHealUsed: false,
+      witchPoisonUsed: false,
+      verfluchterConvertedThisNight: null,
+      hadRole: (roleId: RoleId) => roleId === "urwolf" || roleId === "seher",
+      aliveWithRole: (roleId: RoleId) => roleId === "urwolf" || roleId === "seher",
+      amorPick: [],
+    };
+
+    expect(buildNightSteps({ ...baseParams, urwolfTransformTarget: null }).map(step => step.id))
+      .toEqual(["sleep", "wolves", "urwolf", "seer", "dawn"]);
+    expect(buildNightSteps({ ...baseParams, urwolfTransformTarget: 3 }).map(step => step.id))
+      .toEqual(["sleep", "wolves", "urwolf", "urwolfinfo", "seer", "dawn"]);
+  });
+
+  it("only exposes successful Urwolf transforms as notification targets", () => {
+    const players = nachtgastPlayers("urwolf");
+
+    expect(getUrwolfTransformTarget(players, {
+      nightVictim: 3,
+      nachtgastTarget: null,
+      beschuetzerTarget: null,
+      verfluchterConvertedThisNight: null,
+      urwolfTransform: true,
+    })?.id).toBe(3);
+    expect(getUrwolfTransformTarget(players, {
+      nightVictim: 3,
+      nachtgastTarget: null,
+      beschuetzerTarget: null,
+      verfluchterConvertedThisNight: null,
+      urwolfTransform: false,
+    })).toBeNull();
+    expect(getUrwolfTransformTarget(players, {
+      nightVictim: 3,
+      nachtgastTarget: null,
+      beschuetzerTarget: 3,
+      verfluchterConvertedThisNight: null,
+      urwolfTransform: true,
+    })).toBeNull();
+    expect(getUrwolfTransformTarget(players, {
+      nightVictim: 2,
+      nachtgastTarget: 3,
+      beschuetzerTarget: null,
+      verfluchterConvertedThisNight: null,
+      urwolfTransform: true,
+    })).toBeNull();
+    expect(getUrwolfTransformTarget(verfluchterPlayers("urwolf"), {
+      nightVictim: 2,
+      nachtgastTarget: null,
+      beschuetzerTarget: null,
+      verfluchterConvertedThisNight: 2,
+      urwolfTransform: true,
+    })).toBeNull();
   });
 
   it("only accepts alive non-Nachtgast players as Nachtgast hosts", () => {

@@ -13,6 +13,7 @@ import {
   getHarterBurscheWoundedByWolfAttack,
   getNachtgastCollateralVictim,
   getTeam,
+  getUrwolfTransformTarget,
   getWolfAttackConvertedVerfluchter,
   isNachtgastAwayFromWolfAttack,
   killPlayer,
@@ -59,24 +60,35 @@ function LocalGame() {
   const [showPlayers, setShowPlayers] = useState(false);
   const [roleInfoId, setRoleInfoId] = useState<RoleId | null>(null);
 
+  const urwolfTransformTarget = useMemo(
+    () => getUrwolfTransformTarget(gs.players, {
+      nightVictim: na.nightVictim,
+      nachtgastTarget: na.nachtgastTarget,
+      beschuetzerTarget: na.beschuetzerTarget,
+      verfluchterConvertedThisNight: na.verfluchterConvertedThisNight,
+      urwolfTransform: na.urwolfTransform,
+    }),
+    [
+      gs.players,
+      na.nightVictim,
+      na.nachtgastTarget,
+      na.beschuetzerTarget,
+      na.verfluchterConvertedThisNight,
+      na.urwolfTransform,
+    ],
+  );
+  const urwolfTransformTargetId = urwolfTransformTarget?.id ?? null;
+
   const getEffectiveRole = useCallback(
     (playerId: number): RoleId | null | undefined => {
-      const nachtgastMissed = isNachtgastAwayFromWolfAttack(gs.players, na.nightVictim, na.nachtgastTarget);
-      const wolfAttackProtected =
-        na.nightVictim !== null &&
-        na.nightVictim === na.beschuetzerTarget &&
-        na.nightVictim !== na.verfluchterConvertedThisNight;
       if (na.verfluchterConvertedThisNight === playerId) return "werwolf";
-      if (na.urwolfTransform && na.nightVictim === playerId && !nachtgastMissed && !wolfAttackProtected) return "werwolf";
+      if (urwolfTransformTargetId === playerId) return "werwolf";
       return gs.players.find(p => p.id === playerId)?.role;
     },
     [
       gs.players,
       na.verfluchterConvertedThisNight,
-      na.urwolfTransform,
-      na.nightVictim,
-      na.nachtgastTarget,
-      na.beschuetzerTarget,
+      urwolfTransformTargetId,
     ],
   );
 
@@ -92,6 +104,7 @@ function LocalGame() {
       witchHealUsed: na.witchHealUsed,
       witchPoisonUsed: na.witchPoisonUsed,
       verfluchterConvertedThisNight: na.verfluchterConvertedThisNight,
+      urwolfTransformTarget: urwolfTransformTargetId,
       harterBurscheWoundedThisNight: na.harterBurscheWoundedThisNight,
       hadRole: gs.hadRole,
       aliveWithRole: gs.aliveWithRole,
@@ -103,6 +116,7 @@ function LocalGame() {
       na.witchHealUsed,
       na.witchPoisonUsed,
       na.verfluchterConvertedThisNight,
+      urwolfTransformTargetId,
       na.harterBurscheWoundedThisNight,
       gs.hadRole,
       gs.aliveWithRole,
@@ -116,7 +130,7 @@ function LocalGame() {
     setDetectivePicks, setDetectiveRevealed, setNightStepIdx,
   } = na;
 
-  const advanceNightStep = useCallback(() => {
+  const advanceNightStep = useCallback((urwolfTransformOverride?: boolean | null) => {
     if (nightStepIdx < nightSteps.length - 1) {
       const currentStep = nightSteps[nightStepIdx];
       if (currentStep?.id === "wolves") {
@@ -131,13 +145,14 @@ function LocalGame() {
           gs.addLog(`⛓️ ${converted.name} war verflucht und wird zum Werwolf.`);
         }
       }
+      const effectiveUrwolfTransform = urwolfTransformOverride ?? na.urwolfTransform;
       const nextStep = nightSteps[nightStepIdx + 1];
       if (nextStep?.id === "dawn" && na.harterBurscheWoundedThisNight === null) {
         const wounded = getHarterBurscheWoundedByWolfAttack(gs.players, na.nightVictim, {
           nachtgastTarget: na.nachtgastTarget,
           beschuetzerTarget: na.beschuetzerTarget,
           verfluchterConvertedThisNight: na.verfluchterConvertedThisNight,
-          urwolfTransform: na.urwolfTransform,
+          urwolfTransform: effectiveUrwolfTransform,
           witchHealThisRound: na.witchHealThisRound,
           harterBurscheWounded: na.harterBurscheWounded,
         });
@@ -676,6 +691,7 @@ function LocalGame() {
             setBeschuetzerTarget={na.setBeschuetzerTarget}
             verfluchterConvertedThisNight={na.verfluchterConvertedThisNight}
             harterBurscheWoundedThisNight={na.harterBurscheWoundedThisNight}
+            urwolfTransformTarget={urwolfTransformTargetId}
             urwolfTransform={na.urwolfTransform} setUrwolfTransform={na.setUrwolfTransform}
             seerTarget={na.seerTarget} setSeerTarget={na.setSeerTarget}
             seerRevealed={na.seerRevealed} setSeerRevealed={na.setSeerRevealed}
