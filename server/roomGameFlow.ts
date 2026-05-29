@@ -378,11 +378,12 @@ export function startNight(room: ServerRoom): void {
 }
 
 function applyWin(room: ServerRoom): void {
+  const urwolfTransformTargetId = getUrwolfTransformTargetId(room);
   const winner = checkWin(room.players, {
     witchHealUsed: room.witchHealUsed,
     witchPoisonUsed: room.witchPoisonUsed,
     winMode: room.winMode,
-    getTeamForPlayer: player => getEffectiveTeamForRoom(room, player.id),
+    getTeamForPlayer: player => getEffectiveTeamForRoom(room, player.id, urwolfTransformTargetId),
   });
   if (winner) {
     room.winner = winner;
@@ -390,20 +391,25 @@ function applyWin(room: ServerRoom): void {
   }
 }
 
+function getUrwolfTransformTargetId(room: ServerRoom): number | null {
+  return getUrwolfTransformTarget(room.players, {
+    nightVictim: room.nightVictim,
+    nachtgastTarget: room.nachtgastTarget,
+    beschuetzerTarget: room.beschuetzerTarget,
+    verfluchterConvertedThisNight: room.verfluchterConvertedThisNight,
+    urwolfTransform: room.urwolfTransform,
+  })?.id ?? null;
+}
+
 function nightSteps(room: ServerRoom) {
+  const urwolfTransformTargetId = getUrwolfTransformTargetId(room);
   return buildNightSteps({
     round: room.round,
     urwolfUsed: room.urwolfUsed,
     witchHealUsed: room.witchHealUsed,
     witchPoisonUsed: room.witchPoisonUsed,
     verfluchterConvertedThisNight: room.verfluchterConvertedThisNight,
-    urwolfTransformTarget: getUrwolfTransformTarget(room.players, {
-      nightVictim: room.nightVictim,
-      nachtgastTarget: room.nachtgastTarget,
-      beschuetzerTarget: room.beschuetzerTarget,
-      verfluchterConvertedThisNight: room.verfluchterConvertedThisNight,
-      urwolfTransform: room.urwolfTransform,
-    })?.id ?? null,
+    urwolfTransformTarget: urwolfTransformTargetId,
     harterBurscheWoundedThisNight: room.harterBurscheWoundedThisNight,
     hadRole: roleId => room.players.some(player => player.originalRole === roleId),
     aliveWithRole: roleId => room.players.some(player => player.alive && player.role === roleId),

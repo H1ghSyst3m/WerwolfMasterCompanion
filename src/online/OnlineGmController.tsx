@@ -371,7 +371,11 @@ export function OnlineGmController({ snapshot, sendCommand }: OnlineGmController
           <NightPhase
             nightSteps={nightSteps}
             nightStepIdx={snapshot.nightStepIdx}
-            advanceNightStep={() => sendCommand({ type: "gm:advanceNightStep" })}
+            advanceNightStep={urwolfTransform =>
+              sendCommand(urwolfTransform === undefined
+                ? { type: "gm:advanceNightStep" }
+                : { type: "gm:advanceNightStep", payload: { urwolfTransform } })
+            }
             resolveNight={() => sendCommand({ type: "gm:resolveNight" })}
             players={players}
             alive={alive}

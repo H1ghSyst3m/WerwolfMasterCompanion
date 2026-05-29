@@ -70,6 +70,17 @@ export function getWolfAttackConvertedVerfluchter(ps: Player[], nightVictim: num
   return ps.find(p => p.id === nightVictim && p.alive && p.role === "verfluchter") ?? null;
 }
 
+export function isInvalidWolfAttack(
+  nightVictim: number | null,
+  beschuetzerTarget: number | null,
+  verfluchterConvertedThisNight: number | null,
+): boolean {
+  return nightVictim !== null && (
+    nightVictim === verfluchterConvertedThisNight ||
+    (nightVictim === beschuetzerTarget && nightVictim !== verfluchterConvertedThisNight)
+  );
+}
+
 export interface UrwolfTransformTargetOpts {
   nightVictim: number | null;
   nachtgastTarget: number | null;
@@ -92,10 +103,7 @@ export function getUrwolfTransformTarget(
   const victim = ps.find(p => p.id === nightVictim && p.alive);
   if (!victim) return null;
   if (isNachtgastAwayFromWolfAttack(ps, nightVictim, nachtgastTarget)) return null;
-  const wolfAttackProtected =
-    nightVictim === beschuetzerTarget &&
-    nightVictim !== verfluchterConvertedThisNight;
-  if (wolfAttackProtected || nightVictim === verfluchterConvertedThisNight) return null;
+  if (isInvalidWolfAttack(nightVictim, beschuetzerTarget, verfluchterConvertedThisNight)) return null;
   return victim;
 }
 
@@ -124,10 +132,7 @@ export function getHarterBurscheWoundedByWolfAttack(
   const victim = ps.find(p => p.id === nightVictim && p.alive && p.role === "harterbursche");
   if (!victim) return null;
   if (isNachtgastAwayFromWolfAttack(ps, nightVictim, nachtgastTarget)) return null;
-  const wolfAttackProtected =
-    nightVictim === beschuetzerTarget &&
-    nightVictim !== verfluchterConvertedThisNight;
-  if (wolfAttackProtected || nightVictim === verfluchterConvertedThisNight) return null;
+  if (isInvalidWolfAttack(nightVictim, beschuetzerTarget, verfluchterConvertedThisNight)) return null;
   if (urwolfTransform || witchHealThisRound) return null;
   return victim;
 }

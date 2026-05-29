@@ -622,6 +622,52 @@ describe("RoomManager", () => {
       .toEqual(["sleep", "wolves", "urwolf", "urwolfinfo", "seer", "dawn"]);
   });
 
+  it("applies an Urwolf transform override while advancing online night steps", () => {
+    const { manager } = createRoomWithPlayers();
+    send(manager, "gm", {
+      type: "gm:setPlayers",
+      payload: {
+        players: [
+          { id: 1, name: "Urwolf", role: "urwolf", originalRole: "urwolf", alive: true, lover: null },
+          { id: 2, name: "Ziel", role: "dorfbewohner", originalRole: "dorfbewohner", alive: true, lover: null },
+          { id: 3, name: "Seher", role: "seher", originalRole: "seher", alive: true, lover: null },
+          { id: 4, name: "Dorf 1", role: "dorfbewohner", originalRole: "dorfbewohner", alive: true, lover: null },
+          { id: 5, name: "Dorf 2", role: "dorfbewohner", originalRole: "dorfbewohner", alive: true, lover: null },
+        ] satisfies Player[],
+      },
+    });
+    send(manager, "gm", { type: "gm:advanceNightStep" });
+    send(manager, "gm", { type: "gm:updateNightAction", payload: { nightVictim: 2 } });
+    send(manager, "gm", { type: "gm:advanceNightStep" });
+
+    const snapshot = latestGmSnapshot(send(manager, "gm", {
+      type: "gm:advanceNightStep",
+      payload: { urwolfTransform: true },
+    }));
+    const urwolfTransformTarget = getUrwolfTransformTarget(snapshot.players, {
+      nightVictim: snapshot.nightVictim,
+      nachtgastTarget: snapshot.nachtgastTarget,
+      beschuetzerTarget: snapshot.beschuetzerTarget,
+      verfluchterConvertedThisNight: snapshot.verfluchterConvertedThisNight,
+      urwolfTransform: snapshot.urwolfTransform,
+    })?.id ?? null;
+    const steps = buildNightSteps({
+      round: snapshot.round,
+      urwolfUsed: snapshot.urwolfUsed,
+      witchHealUsed: snapshot.witchHealUsed,
+      witchPoisonUsed: snapshot.witchPoisonUsed,
+      verfluchterConvertedThisNight: snapshot.verfluchterConvertedThisNight,
+      urwolfTransformTarget,
+      harterBurscheWoundedThisNight: snapshot.harterBurscheWoundedThisNight,
+      hadRole: roleId => snapshot.players.some(player => player.originalRole === roleId),
+      aliveWithRole: roleId => snapshot.players.some(player => player.alive && player.role === roleId),
+      amorPick: snapshot.amorPick,
+    });
+
+    expect(snapshot.urwolfTransform).toBe(true);
+    expect(steps[snapshot.nightStepIdx]?.id).toBe("urwolfinfo");
+  });
+
   it("only exposes successful Urwolf transforms as notification targets", () => {
     const players = nachtgastPlayers("urwolf");
 
@@ -1091,7 +1137,7 @@ describe("RoomManager", () => {
     expect(snapshot.nightStepIdx).toBe(2);
     expect(snapshot.log.map(entry => entry.text)).toContain("⛓️ Verfluchter war verflucht und wird zum Werwolf.");
     const room = manager.getRoomForTest(snapshot.roomCode);
-    expect(room ? getEffectiveTeamForRoom(room, 2) : null).toBe("wolf");
+    expect(room ? getEffectiveTeamForRoom(room, 2, null) : null).toBe("wolf");
   });
 
   it("keeps the wolf victim frozen after Verfluchter conversion", () => {
@@ -1240,6 +1286,9 @@ describe("RoomManager", () => {
     expect(isClientMessage({ type: "unknown" })).toBe(false);
     expect(isClientMessage({ type: "gm:startGame", roomCode: {} })).toBe(false);
     expect(isClientMessage({ type: "gm:closeRoom" })).toBe(true);
+    expect(isClientMessage({ type: "gm:advanceNightStep" })).toBe(true);
+    expect(isClientMessage({ type: "gm:advanceNightStep", payload: { urwolfTransform: true } })).toBe(true);
+    expect(isClientMessage({ type: "gm:advanceNightStep", payload: { nightVictim: 2 } })).toBe(false);
     expect(isClientMessage({ type: "gm:updateRoleCounts", payload: { roleCounts: { werwolf: -1 } } })).toBe(false);
     expect(isClientMessage({ type: "gm:updateNightAction", payload: { nachtgastTarget: 2 } })).toBe(true);
     expect(isClientMessage({ type: "gm:updateNightAction", payload: { nachtgastTarget: -1 } })).toBe(false);
