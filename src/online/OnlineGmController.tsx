@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { buildNightSteps } from "../logic/nightSteps";
-import { getTeam, isNachtgastAwayFromWolfAttack } from "../logic/gameLogic";
+import { getTeam, getUrwolfTransformTarget } from "../logic/gameLogic";
 import { SetupStep2 } from "../components/setup/SetupStep2";
 import { SetupStep3 } from "../components/setup/SetupStep3";
 import { NightPhase } from "../components/night/NightPhase";
@@ -83,26 +83,35 @@ export function OnlineGmController({ snapshot, sendCommand }: OnlineGmController
   }, []);
 
   const players = snapshot.players;
+  const urwolfTransformTarget = useMemo(
+    () => getUrwolfTransformTarget(players, {
+      nightVictim: snapshot.nightVictim,
+      nachtgastTarget: snapshot.nachtgastTarget,
+      beschuetzerTarget: snapshot.beschuetzerTarget,
+      verfluchterConvertedThisNight: snapshot.verfluchterConvertedThisNight,
+      urwolfTransform: snapshot.urwolfTransform,
+    }),
+    [
+      players,
+      snapshot.nightVictim,
+      snapshot.nachtgastTarget,
+      snapshot.beschuetzerTarget,
+      snapshot.verfluchterConvertedThisNight,
+      snapshot.urwolfTransform,
+    ],
+  );
+  const urwolfTransformTargetId = urwolfTransformTarget?.id ?? null;
+
   const getEffectiveRole = useCallback(
     (playerId: number): RoleId | null | undefined => {
-      const nachtgastMissed = isNachtgastAwayFromWolfAttack(players, snapshot.nightVictim, snapshot.nachtgastTarget);
-      const wolfAttackProtected =
-        snapshot.nightVictim !== null &&
-        snapshot.nightVictim === snapshot.beschuetzerTarget &&
-        snapshot.nightVictim !== snapshot.verfluchterConvertedThisNight;
       if (snapshot.verfluchterConvertedThisNight === playerId) return "werwolf";
-      if (snapshot.urwolfTransform && snapshot.nightVictim === playerId && !nachtgastMissed && !wolfAttackProtected) {
-        return "werwolf";
-      }
+      if (urwolfTransformTargetId === playerId) return "werwolf";
       return players.find(player => player.id === playerId)?.role;
     },
     [
       players,
       snapshot.verfluchterConvertedThisNight,
-      snapshot.urwolfTransform,
-      snapshot.nightVictim,
-      snapshot.nachtgastTarget,
-      snapshot.beschuetzerTarget,
+      urwolfTransformTargetId,
     ],
   );
 
@@ -128,6 +137,7 @@ export function OnlineGmController({ snapshot, sendCommand }: OnlineGmController
       witchHealUsed: snapshot.witchHealUsed,
       witchPoisonUsed: snapshot.witchPoisonUsed,
       verfluchterConvertedThisNight: snapshot.verfluchterConvertedThisNight,
+      urwolfTransformTarget: urwolfTransformTargetId,
       harterBurscheWoundedThisNight: snapshot.harterBurscheWoundedThisNight,
       hadRole: roleId => players.some(player => player.originalRole === roleId),
       aliveWithRole: roleId => players.some(player => player.alive && getEffectiveRole(player.id) === roleId),
@@ -139,6 +149,7 @@ export function OnlineGmController({ snapshot, sendCommand }: OnlineGmController
       snapshot.witchHealUsed,
       snapshot.witchPoisonUsed,
       snapshot.verfluchterConvertedThisNight,
+      urwolfTransformTargetId,
       snapshot.harterBurscheWoundedThisNight,
       snapshot.amorPick,
       players,
@@ -360,7 +371,11 @@ export function OnlineGmController({ snapshot, sendCommand }: OnlineGmController
           <NightPhase
             nightSteps={nightSteps}
             nightStepIdx={snapshot.nightStepIdx}
-            advanceNightStep={() => sendCommand({ type: "gm:advanceNightStep" })}
+            advanceNightStep={urwolfTransform =>
+              sendCommand(urwolfTransform === undefined
+                ? { type: "gm:advanceNightStep" }
+                : { type: "gm:advanceNightStep", payload: { urwolfTransform } })
+            }
             resolveNight={() => sendCommand({ type: "gm:resolveNight" })}
             players={players}
             alive={alive}
@@ -373,6 +388,7 @@ export function OnlineGmController({ snapshot, sendCommand }: OnlineGmController
             setBeschuetzerTarget={id => updateNightAction({ beschuetzerTarget: id })}
             verfluchterConvertedThisNight={snapshot.verfluchterConvertedThisNight}
             harterBurscheWoundedThisNight={snapshot.harterBurscheWoundedThisNight}
+            urwolfTransformTarget={urwolfTransformTargetId}
             urwolfTransform={snapshot.urwolfTransform}
             setUrwolfTransform={value => updateNightAction({ urwolfTransform: value })}
             seerTarget={snapshot.seerTarget}

@@ -92,7 +92,7 @@ export type GmCommand =
       | "amorPick"
       | "nightResolved"
     >> }
-  | { type: "gm:advanceNightStep"; payload?: undefined }
+  | { type: "gm:advanceNightStep"; payload?: { urwolfTransform?: boolean | null } }
   | { type: "gm:resolveNight"; payload?: undefined }
   | { type: "gm:resolveHunter"; payload: { targetId: number | null } }
   | { type: "gm:startDay"; payload?: undefined }
@@ -255,6 +255,14 @@ function isNightActionPayload(value: unknown): boolean {
   });
 }
 
+function isAdvanceNightStepPayload(value: unknown): boolean {
+  if (value === undefined) return true;
+  if (!isRecord(value)) return false;
+  return Object.entries(value).every(([key, fieldValue]) =>
+    key === "urwolfTransform" && (fieldValue === null || typeof fieldValue === "boolean")
+  );
+}
+
 export function isClientMessage(value: unknown): value is ClientMessage {
   if (!value || typeof value !== "object") return false;
   const maybe = value as { type?: unknown; requestId?: unknown; roomCode?: unknown; clientToken?: unknown; payload?: unknown };
@@ -272,7 +280,6 @@ export function isClientMessage(value: unknown): value is ClientMessage {
     case "gm:assignRoles":
     case "gm:startGame":
     case "gm:startFirstNight":
-    case "gm:advanceNightStep":
     case "gm:resolveNight":
     case "gm:startDay":
     case "gm:startNight":
@@ -299,6 +306,8 @@ export function isClientMessage(value: unknown): value is ClientMessage {
       );
     case "gm:updateNightAction":
       return isNightActionPayload(maybe.payload);
+    case "gm:advanceNightStep":
+      return isAdvanceNightStepPayload(maybe.payload);
     case "gm:resolveHunter":
       return isRecord(maybe.payload) && (maybe.payload.targetId === null || isNonNegativeInteger(maybe.payload.targetId));
     case "gm:dayVote":

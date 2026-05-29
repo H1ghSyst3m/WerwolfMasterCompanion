@@ -6,6 +6,7 @@ export interface BuildNightStepsParams {
   witchHealUsed: boolean;
   witchPoisonUsed: boolean;
   verfluchterConvertedThisNight: number | null;
+  urwolfTransformTarget?: number | null;
   harterBurscheWoundedThisNight?: number | null;
   hadRole: (r: RoleId) => boolean;
   aliveWithRole: (r: RoleId) => boolean;
@@ -18,6 +19,7 @@ export function buildNightSteps({
   witchHealUsed,
   witchPoisonUsed,
   verfluchterConvertedThisNight,
+  urwolfTransformTarget = null,
   harterBurscheWoundedThisNight = null,
   hadRole,
   aliveWithRole,
@@ -90,6 +92,15 @@ export function buildNightSteps({
       desc: "Urwolf entscheidet: Soll das Opfer verwandelt statt getötet werden? (einmalig)",
       active: aliveWithRole("urwolf") && !urwolfUsed,
     });
+    if (urwolfTransformTarget !== null) {
+      steps.push({
+        id: "urwolfinfo",
+        title: "Verwandelten informieren",
+        icon: "🐺",
+        desc: "Informiere den vom Urwolf verwandelten Spieler leise.",
+        active: true,
+      });
+    }
   }
 
   if (hadRole("seher")) {

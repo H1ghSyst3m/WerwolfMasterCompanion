@@ -1,5 +1,5 @@
 import { createInitialGameRuntimeState, createPlayer, resetRuntimeForLobby } from "../src/domain/gameState";
-import { getTeam, isNachtgastAwayFromWolfAttack } from "../src/logic/gameLogic";
+import { getTeam } from "../src/logic/gameLogic";
 import { makeToken } from "./roomIdentity";
 import type { ServerRoom, ServerRoomPlayer } from "./roomTypes";
 import type { GamePhase, Player } from "../src/types";
@@ -76,14 +76,13 @@ export function addLogText(room: ServerRoom, text: string, round?: number, gameP
   ];
 }
 
-export function getEffectiveTeamForRoom(room: ServerRoom, playerId: number): "wolf" | "village" {
-  const nachtgastMissed = isNachtgastAwayFromWolfAttack(room.players, room.nightVictim, room.nachtgastTarget);
-  const wolfAttackProtected =
-    room.nightVictim !== null &&
-    room.nightVictim === room.beschuetzerTarget &&
-    room.nightVictim !== room.verfluchterConvertedThisNight;
+export function getEffectiveTeamForRoom(
+  room: ServerRoom,
+  playerId: number,
+  urwolfTransformTargetId: number | null,
+): "wolf" | "village" {
   const role = room.verfluchterConvertedThisNight === playerId ||
-    (room.urwolfTransform && room.nightVictim === playerId && !nachtgastMissed && !wolfAttackProtected)
+    urwolfTransformTargetId === playerId
     ? "werwolf"
     : room.players.find(player => player.id === playerId)?.role;
   return getTeam(role);

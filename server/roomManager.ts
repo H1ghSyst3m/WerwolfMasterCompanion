@@ -156,6 +156,7 @@ export class RoomManager {
         applyNightActionPatch(room, message.payload);
         return broadcast(room);
       case "gm:advanceNightStep":
+        applyNightActionPatch(room, message.payload);
         advanceNightStep(room);
         return broadcast(room);
       case "gm:resolveNight":

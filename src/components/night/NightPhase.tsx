@@ -3,6 +3,7 @@ import { NightStepSleep } from "./NightStepSleep";
 import { NightStepWolves } from "./NightStepWolves";
 import { NightStepVerfluchter } from "./NightStepVerfluchter";
 import { NightStepUrwolf } from "./NightStepUrwolf";
+import { NightStepUrwolfInfo } from "./NightStepUrwolfInfo";
 import { NightStepAmor } from "./NightStepAmor";
 import { NightStepLovers } from "./NightStepLovers";
 import { NightStepNachtgast } from "./NightStepNachtgast";
@@ -21,7 +22,7 @@ interface NightPhaseProps {
   // Step management
   nightSteps: NightStep[];
   nightStepIdx: number;
-  advanceNightStep: () => void;
+  advanceNightStep: (urwolfTransformOverride?: boolean | null) => void;
   resolveNight: () => void;
   // Players
   players: Player[];
@@ -36,6 +37,7 @@ interface NightPhaseProps {
   setBeschuetzerTarget: (id: number) => void;
   verfluchterConvertedThisNight: number | null;
   harterBurscheWoundedThisNight: number | null;
+  urwolfTransformTarget: number | null;
   urwolfTransform: boolean | null;
   setUrwolfTransform: (v: boolean) => void;
   seerTarget: number | null;
@@ -81,6 +83,7 @@ export function NightPhase({
   setBeschuetzerTarget,
   verfluchterConvertedThisNight,
   harterBurscheWoundedThisNight,
+  urwolfTransformTarget,
   urwolfTransform,
   setUrwolfTransform,
   seerTarget,
@@ -133,6 +136,10 @@ export function NightPhase({
     }
     if (stepId === "harterbursche") {
       const matching = players.filter(p => p.id === harterBurscheWoundedThisNight);
+      return matching.length === 0 ? null : matching;
+    }
+    if (stepId === "urwolfinfo") {
+      const matching = players.filter(p => p.id === urwolfTransformTarget);
       return matching.length === 0 ? null : matching;
     }
     const roles = roleMap[stepId];
@@ -200,7 +207,7 @@ export function NightPhase({
               <p className="text-gray-500 text-sm">💤 Keine Aktion. Rolle ist nicht mehr aktiv.</p>
               <p className="text-gray-600 text-xs mt-1">Kurz warten, dann weiter, um den Ablauf einzuhalten.</p>
             </div>
-            <Btn onClick={advanceNightStep} cls="bg-indigo-600 hover:bg-indigo-500 text-white w-full" size="lg">
+            <Btn onClick={() => advanceNightStep()} cls="bg-indigo-600 hover:bg-indigo-500 text-white w-full" size="lg">
               Weiter →
             </Btn>
           </div>
@@ -278,6 +285,14 @@ export function NightPhase({
           verfluchterConvertedThisNight={verfluchterConvertedThisNight}
           players={players}
           setUrwolfTransform={setUrwolfTransform}
+          advanceNightStep={advanceNightStep}
+        />
+      )}
+
+      {currentNightStep.active && currentNightStep.id === "urwolfinfo" && (
+        <NightStepUrwolfInfo
+          players={players}
+          transformedPlayerId={urwolfTransformTarget}
           advanceNightStep={advanceNightStep}
         />
       )}
