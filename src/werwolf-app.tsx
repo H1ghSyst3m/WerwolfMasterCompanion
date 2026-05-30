@@ -20,6 +20,7 @@ import {
   killPlayer,
 } from "./logic/gameLogic";
 import { normalizePersistedPhase } from "./domain/persistedPhase";
+import { autoFillVillagers } from "./domain/gameState";
 import { SetupStep1 } from "./components/setup/SetupStep1";
 import { SetupStep2 } from "./components/setup/SetupStep2";
 import { SetupStep3 } from "./components/setup/SetupStep3";
@@ -612,7 +613,10 @@ function LocalGame() {
     if (gs.setupStep === 1) return (
       <SetupStep1
         players={gs.players} nameInput={nameInput} setNameInput={setNameInput}
-        addPlayer={addPlayer} removePlayer={removePlayer} onNext={() => gs.setSetupStep(2)}
+        addPlayer={addPlayer} removePlayer={removePlayer} onNext={() => {
+          setRoleCounts(prev => autoFillVillagers(prev, gs.players.length));
+          gs.setSetupStep(2);
+        }}
         clearPlayers={() => gs.setPlayers([])}
       />
     );
@@ -624,7 +628,12 @@ function LocalGame() {
         revealMode={revealMode} setRevealMode={setRevealMode}
         roleReveal={roleReveal} setRoleReveal={setRoleReveal}
         onBack={() => gs.setSetupStep(1)}
-        onNext={() => { setManualAssign({}); setAssignMode(null); gs.setSetupStep(3); }}
+        onNext={() => {
+          setRoleCounts(prev => autoFillVillagers(prev, gs.players.length));
+          setManualAssign({});
+          setAssignMode(null);
+          gs.setSetupStep(3);
+        }}
       />
     );
     if (gs.setupStep === 3) return (

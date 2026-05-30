@@ -166,6 +166,27 @@ function sanitizeRoleCount(roleCounts: RoleCounts, roleId: RoleId): number {
   return Number.isFinite(rawCount) ? Math.max(0, Math.floor(rawCount)) : 0;
 }
 
+export function nonVillagerRoleTotal(roleCounts: RoleCounts): number {
+  return ROLE_IDS.reduce<number>((total, roleId) => {
+    if (roleId === "dorfbewohner") return total;
+    return total + sanitizeRoleCount(roleCounts, roleId);
+  }, 0);
+}
+
+export function autoFillVillagers(roleCounts: RoleCounts, playerCount: number): RoleCounts {
+  const safePlayerCount = Number.isFinite(playerCount) ? Math.max(0, Math.floor(playerCount)) : 0;
+  const normalized: RoleCounts = {};
+
+  ROLE_IDS.forEach(roleId => {
+    if (roleId === "dorfbewohner") return;
+    const count = sanitizeRoleCount(roleCounts, roleId);
+    if (count > 0) normalized[roleId] = count;
+  });
+
+  normalized.dorfbewohner = Math.max(0, safePlayerCount - nonVillagerRoleTotal(normalized));
+  return normalized;
+}
+
 export function shuffleRoles(roleCounts: RoleCounts, random = Math.random): RoleId[] {
   const pool = buildRolePool(roleCounts);
   for (let i = pool.length - 1; i > 0; i -= 1) {

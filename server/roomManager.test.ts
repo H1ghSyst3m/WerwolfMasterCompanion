@@ -1,7 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import { getEffectiveTeamForRoom, RoomManager } from "./roomManager";
 import { isClientMessage } from "../src/online/messages";
-import { assignManualRoles, buildRolePool, roleCountTotal } from "../src/domain/gameState";
+import {
+  assignManualRoles,
+  autoFillVillagers,
+  buildRolePool,
+  nonVillagerRoleTotal,
+  roleCountTotal,
+} from "../src/domain/gameState";
 import { checkWin, getTeam, getUrwolfTransformTarget } from "../src/logic/gameLogic";
 import { buildNightSteps } from "../src/logic/nightSteps";
 import { ROLES } from "../src/constants/roles";
@@ -192,6 +198,31 @@ describe("RoomManager", () => {
       payload: { roomCode: gmSession.roomCode, name: "Zu spät" },
     });
     expect(rejected[0]?.message.type).toBe("error");
+  });
+
+  it("auto-fills villagers when role setup starts", () => {
+    const { manager } = createRoomWithPlayers();
+
+    const snapshot = latestGmSnapshot(send(manager, "gm", { type: "gm:lockLobby" }));
+
+    expect(snapshot.roleCounts.dorfbewohner).toBe(5);
+    expect(roleCountTotal(snapshot.roleCounts)).toBe(5);
+  });
+
+  it("keeps villagers as remaining role slots when role counts change", () => {
+    const { manager } = createRoomWithPlayers();
+    send(manager, "gm", { type: "gm:lockLobby" });
+
+    const updated = latestGmSnapshot(send(manager, "gm", {
+      type: "gm:updateRoleCounts",
+      payload: { roleCounts: { werwolf: 1 } },
+    }));
+
+    expect(updated.roleCounts).toMatchObject({ werwolf: 1, dorfbewohner: 4 });
+
+    const assignment = latestGmSnapshot(send(manager, "gm", { type: "gm:goToAssignment" }));
+    expect(assignment.roomPhase).toBe("assignment");
+    expect(assignment.roleCounts).toMatchObject({ werwolf: 1, dorfbewohner: 4 });
   });
 
   it("filters player snapshots so players only receive their own assigned role", () => {
@@ -1466,6 +1497,21 @@ describe("RoomManager", () => {
       { id: 1, name: "A", role: "seher", originalRole: "seher", alive: true, lover: null },
       { id: 2, name: "B", role: null, originalRole: null, alive: true, lover: null },
     ]);
+  });
+
+  it("auto-fills villagers from the selected non-villager roles", () => {
+    expect(autoFillVillagers({}, 10).dorfbewohner).toBe(10);
+
+    const balanced = autoFillVillagers({ werwolf: 2, seher: 1 }, 10);
+    expect(balanced).toMatchObject({ werwolf: 2, seher: 1, dorfbewohner: 7 });
+    expect(nonVillagerRoleTotal(balanced)).toBe(3);
+
+    const overflow = autoFillVillagers({ werwolf: 6 }, 5);
+    expect(overflow).toMatchObject({ werwolf: 6, dorfbewohner: 0 });
+    expect(roleCountTotal(overflow)).toBe(6);
+
+    const pool = buildRolePool(autoFillVillagers({ werwolf: 2 }, 5));
+    expect(pool.filter(roleId => roleId === "dorfbewohner")).toHaveLength(3);
   });
 
   it("builds role pools only from canonical roles and sanitized counts", () => {

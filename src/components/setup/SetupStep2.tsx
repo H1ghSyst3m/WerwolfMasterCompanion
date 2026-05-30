@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { ROLES } from "../../constants/roles";
+import { autoFillVillagers, nonVillagerRoleTotal, roleCountTotal } from "../../domain/gameState";
 import { Btn } from "../ui/Btn";
 import { RoleInfoModal } from "../ui/RoleInfoModal";
 import { SetupScreenShell } from "./SetupScreenShell";
@@ -44,7 +45,25 @@ export function SetupStep2({
 }: SetupStep2Props) {
   const n = players.length;
   const suggested = Math.max(1, Math.floor(n / 4));
-  const totalRoles = Object.values(roleCounts).reduce<number>((a, b) => a + (b ?? 0), 0);
+  const displayRoleCounts = useMemo(() => autoFillVillagers(roleCounts, n), [roleCounts, n]);
+  const totalRoles = roleCountTotal(displayRoleCounts);
+  const nonVillagerRoles = nonVillagerRoleTotal(displayRoleCounts);
+  const freeSlots = n - nonVillagerRoles;
+  const overLimit = freeSlots < 0;
+  const statusText = overLimit
+    ? `${Math.abs(freeSlots)} zu viel`
+    : freeSlots > 0
+      ? `Noch ${freeSlots} frei`
+      : "Voll";
+  const statusClass = overLimit
+    ? "border-red-800 bg-red-950/50 text-red-300"
+    : freeSlots > 0
+      ? "border-amber-800 bg-amber-950/40 text-amber-300"
+      : "border-green-800 bg-green-950/40 text-green-300";
+
+  const updateRoleCount = (roleId: RoleId, count: number) => {
+    setRoleCounts(prev => autoFillVillagers({ ...prev, [roleId]: count }, n));
+  };
 
   const [rulesOpen, setRulesOpen] = useState(false);
 
@@ -65,10 +84,17 @@ export function SetupStep2({
         </Btn>
       }
     >
-      <p className="text-gray-400 text-sm mb-2">Empfohlen: {suggested} Werwölfe für {n} Spieler</p>
-      <p className={`text-sm mb-4 font-semibold ${totalRoles === n ? "text-green-400" : totalRoles > n ? "text-red-400" : "text-amber-400"}`}>
-        {totalRoles}/{n} Rollen vergeben
-      </p>
+      <div className="mb-4 space-y-2">
+        <div className="flex items-center justify-between gap-3">
+          <p className={`text-sm font-semibold ${totalRoles === n ? "text-green-400" : totalRoles > n ? "text-red-400" : "text-amber-400"}`}>
+            {totalRoles}/{n} Rollen vergeben
+          </p>
+          <span className={`shrink-0 rounded-lg border px-2.5 py-1 text-xs font-semibold ${statusClass}`}>
+            {statusText}
+          </span>
+        </div>
+        <p className="text-gray-400 text-sm">Empfohlen: {suggested} Werwölfe für {n} Spieler</p>
+      </div>
 
       {/* Spielregeln (collapsible) */}
       <div className="mb-4 rounded-xl border border-gray-800 bg-gray-900 overflow-hidden">
@@ -191,27 +217,41 @@ export function SetupStep2({
             {(Object.entries(ROLES) as [RoleId, typeof ROLES[RoleId]][])
               .filter(([, r]) => r.cat === cat)
               .map(([id, r]) => {
-                const c = roleCounts[id] ?? 0;
+                const c = displayRoleCounts[id] ?? 0;
+                const isVillager = id === "dorfbewohner";
                 const max = r.unique ? 1 : n;
+                const canDecrease = !isVillager && c > 0;
+                const canIncrease = !isVillager && c < max && freeSlots > 0;
                 return (
                   <div key={id} className="flex items-center justify-between bg-gray-900 rounded-xl px-4 py-3 border border-gray-800">
-                    <div className="flex items-center gap-2">
-                      <span>{r.icon} {r.name}</span>
+                    <div className="min-w-0 flex items-center gap-2">
+                      <span className="truncate">{r.icon} {r.name}</span>
                       <button onClick={() => setRoleInfoId(id)} className="text-gray-500 hover:text-gray-300 text-sm" aria-label={`Mehr Informationen zu ${r.name}`}>ℹ️</button>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <button
-                        aria-label={`${r.name} verringern`}
-                        onClick={() => setRoleCounts(prev => ({ ...prev, [id]: Math.max(0, c - 1) }))}
-                        className="w-8 h-8 rounded-lg bg-gray-700 flex items-center justify-center text-lg font-bold"
-                      >−</button>
-                      <span className="w-6 text-center font-bold">{c}</span>
-                      <button
-                        aria-label={`${r.name} erhöhen`}
-                        onClick={() => setRoleCounts(prev => ({ ...prev, [id]: Math.min(max, c + 1) }))}
-                        className="w-8 h-8 rounded-lg bg-gray-700 flex items-center justify-center text-lg font-bold"
-                      >+</button>
-                    </div>
+                    {isVillager ? (
+                      <div className="flex min-w-[7.5rem] items-center justify-end gap-2">
+                        <span className="w-7 text-center font-bold">{c}</span>
+                        <span className="rounded-lg border border-gray-700 bg-gray-800 px-2 py-1 text-xs font-semibold text-gray-400">
+                          automatisch
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex min-w-[7.5rem] items-center justify-end gap-3">
+                        <button
+                          aria-label={`${r.name} verringern`}
+                          onClick={() => updateRoleCount(id, Math.max(0, c - 1))}
+                          disabled={!canDecrease}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-700 text-lg font-bold transition-colors hover:bg-gray-600 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-600 disabled:opacity-50"
+                        >−</button>
+                        <span className="w-6 text-center font-bold">{c}</span>
+                        <button
+                          aria-label={`${r.name} erhöhen`}
+                          onClick={() => updateRoleCount(id, Math.min(max, c + 1))}
+                          disabled={!canIncrease}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-700 text-lg font-bold transition-colors hover:bg-gray-600 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-600 disabled:opacity-50"
+                        >+</button>
+                      </div>
+                    )}
                   </div>
                 );
               })}
