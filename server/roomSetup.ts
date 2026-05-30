@@ -1,4 +1,4 @@
-import { assignManualRoles, assignRolePool, roleCountTotal, shuffleRoles } from "../src/domain/gameState";
+import { assignManualRoles, assignRolePool, autoFillVillagers, roleCountTotal, shuffleRoles } from "../src/domain/gameState";
 import { REVEAL_MODE_SET, WIN_MODE_SET } from "../src/constants/gameOptions";
 import { addLogText, mergePublicPlayers, resetRoomToLobby } from "./roomState";
 import type { ServerRoom } from "./roomTypes";
@@ -10,6 +10,7 @@ export function lockLobby(room: ServerRoom): void {
   room.locked = true;
   room.roomPhase = "setup";
   room.setupStep = 2;
+  room.roleCounts = autoFillVillagers(room.roleCounts, room.players.length);
 }
 
 export function unlockLobby(room: ServerRoom): void {
@@ -19,6 +20,7 @@ export function unlockLobby(room: ServerRoom): void {
 
 export function goToAssignment(room: ServerRoom): void {
   if (room.roomPhase !== "setup") throw new Error("Die Rollenzuweisung kann nur aus den Einstellungen gestartet werden.");
+  room.roleCounts = autoFillVillagers(room.roleCounts, room.players.length);
   if (roleCountTotal(room.roleCounts) !== room.players.length) throw new Error("Die Rollenanzahl muss zur Spielerzahl passen.");
   room.roomPhase = "assignment";
   room.setupStep = 3;
@@ -31,7 +33,10 @@ export function setAssignMode(room: ServerRoom, payload: unknown): void {
 }
 
 export function updateRoleCounts(room: ServerRoom, payload: unknown): void {
-  room.roleCounts = { ...((payload as { roleCounts?: RoleCounts }).roleCounts ?? {}) };
+  room.roleCounts = autoFillVillagers(
+    { ...((payload as { roleCounts?: RoleCounts }).roleCounts ?? {}) },
+    room.players.length,
+  );
 }
 
 export function setPrefs(room: ServerRoom, payload: unknown): void {
