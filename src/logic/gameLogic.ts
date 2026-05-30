@@ -168,9 +168,10 @@ export function convertWildesKindIfVorbildNewlyDead(
   ) ?? null;
   if (!wildesKind) return { players: resolvedPlayers, converted: null };
 
+  const convertedPlayers = convertPlayerToWerewolf(resolvedPlayers, wildesKind.id);
   return {
-    players: convertPlayerToWerewolf(resolvedPlayers, wildesKind.id),
-    converted: wildesKind,
+    players: convertedPlayers,
+    converted: convertedPlayers.find(player => player.id === wildesKind.id) ?? null,
   };
 }
 
