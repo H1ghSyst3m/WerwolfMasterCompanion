@@ -196,6 +196,18 @@ Beschützer is server-owned in Online Mode:
 - On resolution, protection prevents only the wolf attack. Witch poison, Hunter shots, day vote, lover deaths, and other non-wolf effects still apply normally.
 - Reset to lobby clears both fields. New nights clear `beschuetzerTarget` while preserving `beschuetzerLastTarget` for the repeat-target rule.
 
+## Wildes Kind Online Behavior
+
+Wildes Kind is server-owned in Online Mode:
+
+- The GM chooses `wildesKindVorbild` in night 1 after Amor/Liebespaar and before Nachtgast/Beschützer/Werwölfe.
+- The server validates that the role model is living and is not the alive Wildes Kind.
+- The GM snapshot includes `wildesKindVorbild`; player snapshots do not expose the choice.
+- The server checks for conversion only after known death resolution points: night resolution, day vote, Hunter shots, and lover heartbreak chains.
+- When the role model is newly dead and the Wildes Kind still lives, the server changes the current role to `werwolf` and keeps `originalRole = "wildeskind"`.
+- Player snapshots still do not include logs. The converted player sees the updated private role card as `Werwolf (ehem. Wildes Kind)`.
+- Reset to lobby clears `wildesKindVorbild`. New nights preserve it.
+
 ## Verfluchter Online Behavior
 
 Verfluchter conversion is owned by the server:

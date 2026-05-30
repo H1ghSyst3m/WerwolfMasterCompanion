@@ -10,6 +10,7 @@ import {
   checkWin,
   clearHarterBurscheWoundForDeadPlayer,
   convertPlayerToWerewolf,
+  convertWildesKindIfVorbildNewlyDead,
   getHarterBurscheWoundedByWolfAttack,
   getNachtgastCollateralVictim,
   getTeam,
@@ -181,7 +182,16 @@ function LocalGame() {
     setNightStepIdx,
   ]);
 
+  const applyWildesKindConversion = useCallback((previousPlayers: Player[], resolvedPlayers: Player[]): Player[] => {
+    const result = convertWildesKindIfVorbildNewlyDead(previousPlayers, resolvedPlayers, na.wildesKindVorbild);
+    if (result.converted) {
+      gs.addLog(`🌿 ${result.converted.name} verliert sein Vorbild und wird heimlich zum Werwolf.`);
+    }
+    return result.players;
+  }, [gs, na.wildesKindVorbild]);
+
   const resolveNight = useCallback(() => {
+    const playersAtResolutionStart = gs.players;
     let updatedPlayers = [...gs.players];
     const allTriggers: ReturnType<typeof killPlayer>["triggers"] = [];
     const woundedAtNightStart = na.harterBurscheWoundedThisNight === na.harterBurscheWounded
@@ -300,6 +310,8 @@ function LocalGame() {
       na.setHarterBurscheWoundedThisNight(null);
     }
 
+    updatedPlayers = applyWildesKindConversion(playersAtResolutionStart, updatedPlayers);
+
     const allDead = updatedPlayers.filter(
       p => !p.alive && gs.players.find(pp => pp.id === p.id)?.alive,
     );
@@ -314,11 +326,10 @@ function LocalGame() {
         witchHealUsed: effectiveHealUsed,
         witchPoisonUsed: effectivePoisonUsed,
         winMode,
-        getTeamForPlayer: player => getEffectiveTeam(player.id),
       });
       if (w) { gs.setWinner(w); gs.setPhase("ended"); }
     }
-  }, [gs, na, tq, winMode, getEffectiveTeam]);
+  }, [gs, na, tq, winMode, applyWildesKindConversion]);
 
   const resolveHunter = useCallback(
     (targetId: number | null) => {
@@ -332,6 +343,7 @@ function LocalGame() {
         const result = killPlayer(targetId, "Jäger", updatedPlayers);
         updatedPlayers = result.players;
         result.logs.forEach(l => gs.addLog(l));
+        updatedPlayers = applyWildesKindConversion(beforeKill, updatedPlayers);
         const newDeaths = updatedPlayers.filter(p => !p.alive && beforeKill.find(pp => pp.id === p.id)?.alive);
         gs.setDayDeaths([...gs.dayDeaths, ...newDeaths]);
         na.setHarterBurscheWounded(clearHarterBurscheWoundForDeadPlayer(updatedPlayers, na.harterBurscheWounded));
@@ -346,7 +358,6 @@ function LocalGame() {
             witchHealUsed: na.witchHealUsed,
             witchPoisonUsed: na.witchPoisonUsed,
             winMode,
-            getTeamForPlayer: player => getEffectiveTeam(player.id),
           });
           if (w) { gs.setWinner(w); gs.setPhase("ended"); }
         }
@@ -358,13 +369,12 @@ function LocalGame() {
             witchHealUsed: na.witchHealUsed,
             witchPoisonUsed: na.witchPoisonUsed,
             winMode,
-            getTeamForPlayer: player => getEffectiveTeam(player.id),
           });
           if (w) { gs.setWinner(w); gs.setPhase("ended"); }
         }
       }
     },
-    [tq, gs, na, winMode, getEffectiveTeam],
+    [tq, gs, na, winMode, applyWildesKindConversion],
   );
 
   const handleDayVote = useCallback(
@@ -385,24 +395,24 @@ function LocalGame() {
       gs.addLog(`🗳️ ${p.name} wurde vom Dorf hingerichtet.`);
       const result = killPlayer(pid, "Abstimmung", gs.players);
       result.logs.forEach(l => gs.addLog(l));
-      gs.setPlayers(result.players);
-      na.setHarterBurscheWounded(clearHarterBurscheWoundForDeadPlayer(result.players, na.harterBurscheWounded));
-      na.setHarterBurscheWoundedThisNight(clearHarterBurscheWoundForDeadPlayer(result.players, na.harterBurscheWoundedThisNight));
+      const updatedPlayers = applyWildesKindConversion(gs.players, result.players);
+      gs.setPlayers(updatedPlayers);
+      na.setHarterBurscheWounded(clearHarterBurscheWoundForDeadPlayer(updatedPlayers, na.harterBurscheWounded));
+      na.setHarterBurscheWoundedThisNight(clearHarterBurscheWoundForDeadPlayer(updatedPlayers, na.harterBurscheWoundedThisNight));
       gs.setDayVoteDone(true);
       setDayVoteVictim(p);
       if (result.triggers.length > 0) {
         tq.setTriggerQueue(result.triggers);
       } else {
-        const w = checkWin(result.players, {
+        const w = checkWin(updatedPlayers, {
           witchHealUsed: na.witchHealUsed,
           witchPoisonUsed: na.witchPoisonUsed,
           winMode,
-          getTeamForPlayer: player => getEffectiveTeam(player.id),
         });
         if (w) { gs.setWinner(w); gs.setPhase("ended"); }
       }
     },
-    [gs, tq, timer, na, winMode, getEffectiveTeam],
+    [gs, tq, timer, na, winMode, applyWildesKindConversion],
   );
 
   const startDay = useCallback(() => {
@@ -487,6 +497,7 @@ function LocalGame() {
     nachtgastTarget: na.nachtgastTarget,
     beschuetzerTarget: na.beschuetzerTarget,
     beschuetzerLastTarget: na.beschuetzerLastTarget,
+    wildesKindVorbild: na.wildesKindVorbild,
     verfluchterConvertedThisNight: na.verfluchterConvertedThisNight,
     harterBurscheWounded: na.harterBurscheWounded,
     harterBurscheWoundedThisNight: na.harterBurscheWoundedThisNight,
@@ -528,6 +539,7 @@ function LocalGame() {
     na.setNachtgastTarget(s.nachtgastTarget ?? null);
     na.setBeschuetzerTarget(s.beschuetzerTarget ?? null);
     na.setBeschuetzerLastTarget(s.beschuetzerLastTarget ?? null);
+    na.setWildesKindVorbild(s.wildesKindVorbild ?? null);
     na.setVerfluchterConvertedThisNight(s.verfluchterConvertedThisNight ?? null);
     na.setHarterBurscheWounded(s.harterBurscheWounded ?? null);
     na.setHarterBurscheWoundedThisNight(s.harterBurscheWoundedThisNight ?? null);
@@ -557,7 +569,8 @@ function LocalGame() {
   }, [
     slLoaded, gs.phase, gs.players, gs.round, gs.gamePhase,
     na.nightStepIdx, na.nightVictim, na.urwolfTransform, na.urwolfUsed,
-    na.nachtgastTarget, na.beschuetzerTarget, na.beschuetzerLastTarget, na.verfluchterConvertedThisNight,
+    na.nachtgastTarget, na.beschuetzerTarget, na.beschuetzerLastTarget, na.wildesKindVorbild,
+    na.verfluchterConvertedThisNight,
     na.harterBurscheWounded, na.harterBurscheWoundedThisNight,
     na.witchHealUsed, na.witchPoisonUsed, na.witchHealThisRound,
     na.witchPoisonTarget, na.nightResolved, gs.dayDeaths, gs.dayVoteDone,
@@ -575,7 +588,7 @@ function LocalGame() {
     gs.setRound(1); gs.setGamePhase("night"); na.resetNightActions();
     na.setUrwolfUsed(false); na.setWitchHealUsed(false); na.setWitchPoisonUsed(false);
     na.setBeschuetzerLastTarget(null); na.setHarterBurscheWounded(null); na.setHarterBurscheWoundedThisNight(null);
-    na.setAmorPick([]); gs.setLog([]); tq.setTriggerQueue([]);
+    na.setWildesKindVorbild(null); na.setAmorPick([]); gs.setLog([]); tq.setTriggerQueue([]);
     gs.setWinner(null); timer.setDayTimer(0); timer.setTimerRunning(false); timer.setTimerDuration(300);
     gs.setDayDeaths([]); gs.setDayVoteDone(false); gs.setVoteConfirm(null); setDayVoteVictim(null);
     setShowLog(false); setShowPlayers(false); setRoleInfoId(null); sl.deleteSave();
@@ -689,6 +702,8 @@ function LocalGame() {
             beschuetzerTarget={na.beschuetzerTarget}
             beschuetzerLastTarget={na.beschuetzerLastTarget}
             setBeschuetzerTarget={na.setBeschuetzerTarget}
+            wildesKindVorbild={na.wildesKindVorbild}
+            setWildesKindVorbild={na.setWildesKindVorbild}
             verfluchterConvertedThisNight={na.verfluchterConvertedThisNight}
             harterBurscheWoundedThisNight={na.harterBurscheWoundedThisNight}
             urwolfTransformTarget={urwolfTransformTargetId}

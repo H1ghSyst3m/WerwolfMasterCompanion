@@ -77,6 +77,7 @@ export type GmCommand =
       | "nightVictim"
       | "nachtgastTarget"
       | "beschuetzerTarget"
+      | "wildesKindVorbild"
       | "urwolfTransform"
       | "urwolfUsed"
       | "seerTarget"
@@ -231,6 +232,7 @@ function isNightActionPayload(value: unknown): boolean {
       case "nightVictim":
       case "nachtgastTarget":
       case "beschuetzerTarget":
+      case "wildesKindVorbild":
       case "seerTarget":
       case "auraSeerTarget":
       case "witchPoisonTarget":

@@ -13,6 +13,7 @@ export type RoleId =
   | "urwolf"
   | "nachtgast"
   | "beschuetzer"
+  | "wildeskind"
   | "verfluchter"
   | "harterbursche";
 
@@ -104,6 +105,7 @@ export type NightStepId =
   | "sleep"
   | "amor"
   | "lovers"
+  | "wildeskind"
   | "nachtgast"
   | "beschuetzer"
   | "wolves"
@@ -152,6 +154,7 @@ export interface SaveState {
   nachtgastTarget: number | null;
   beschuetzerTarget: number | null;
   beschuetzerLastTarget: number | null;
+  wildesKindVorbild: number | null;
   verfluchterConvertedThisNight: number | null;
   harterBurscheWounded: number | null;
   harterBurscheWoundedThisNight: number | null;

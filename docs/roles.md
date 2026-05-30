@@ -11,7 +11,7 @@ All roles are defined in `src/constants/roles.ts` and typed via the `Role` inter
 - `getTeam(role)` reads team metadata from `ROLES` and safely falls back to `"village"` for malformed runtime values.
 - Team classification and team membership checks should use `getTeam()` or effective-team helpers, not hardcoded role ID checks. Role-specific mechanics may still use explicit role checks via `getEffectiveRole()` or direct role IDs where exact identity matters.
 - `getEffectiveRole()` / `getEffectiveTeam()` are used where transient effects, such as Urwolf transformation, must be visible before the underlying role mutation is finalized.
-- `getRoleDisplay()` in `src/domain/roleDisplay.ts` formats exact-role displays, including converted roles such as `Werwolf (ehem. Verfluchter)`.
+- `getRoleDisplay()` in `src/domain/roleDisplay.ts` formats exact-role displays, including converted roles such as `Werwolf (ehem. Verfluchter)` or `Werwolf (ehem. Wildes Kind)`.
 
 ---
 
@@ -133,6 +133,17 @@ interface Role {
 - **Witch interaction:** Witch heal is not offered and is not spent because there is no wolf kill to heal. Witch poison can still kill the protected player directly.
 - **State:** `beschuetzerTarget` is cleared with per-night state. `beschuetzerLastTarget` stores the previous protected player so the next night can block repeat protection.
 
+### 🌿 Wildes Kind (*unique*)
+- **Team:** Village at setup.
+- **Night 1:** Wakes after Amor/Liebespaar and before Nachtgast/Beschützer/Werwölfe. Chooses one other living player as `wildesKindVorbild`.
+- **Restriction:** Cannot choose themselves. Any other living player is valid, including a Werwolf.
+- **Conversion:** When the chosen role model is newly known dead at a handled resolution point, the living Wildes Kind changes current `role` to `"werwolf"` while keeping `originalRole = "wildeskind"`.
+- **Known-death checkpoints:** Conversion is checked after full night resolution, after a day vote, and after public follow-up deaths such as Hunter shots or lover heartbreak.
+- **Secrecy:** The village is not publicly informed. The GM gets a secret log entry, and Online player clients do not receive logs.
+- **Private role card:** The converted player can see the updated role card as `Werwolf (ehem. Wildes Kind)`.
+- **No early conversion:** Wolf target selection, Witch poison selection, and `killPlayer()` itself do not trigger the conversion. The role model must actually be dead when a resolution point finishes.
+- **State:** `wildesKindVorbild` persists across nights and resets only for a new game/lobby reset.
+
 ### ⛓️ Verfluchter (*unique*)
 - **Team:** Village at setup.
 - **Night:** No active night action.
@@ -166,7 +177,7 @@ interface Role {
 type RoleId =
   | "werwolf" | "dorfbewohner" | "seher" | "hexe" | "jaeger"
   | "amor" | "narr" | "dorftrottel" | "auraseher" | "detektiv" | "urwolf"
-  | "nachtgast" | "beschuetzer" | "verfluchter" | "harterbursche";
+  | "nachtgast" | "beschuetzer" | "wildeskind" | "verfluchter" | "harterbursche";
 ```
 
 ---
@@ -179,6 +190,7 @@ type RoleId =
 | amor | `hadRole("amor") && round === 1` |
 | nachtgast | `aliveWithRole("nachtgast")` |
 | beschuetzer | `aliveWithRole("beschuetzer")` |
+| wildeskind | `aliveWithRole("wildeskind")`, only in round 1 |
 | seher | `aliveWithRole("seher")` |
 | hexe | `aliveWithRole("hexe") && (!witchHealUsed \|\| !witchPoisonUsed)` |
 | jaeger | No night step; triggers on death only |

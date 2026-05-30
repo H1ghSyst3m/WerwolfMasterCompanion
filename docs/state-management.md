@@ -53,6 +53,7 @@ All state specific to a single night's actions. Per-night state is cleared via `
 | `nachtgastTarget` | `number \| null` | ID of the player Nachtgast visits this night |
 | `beschuetzerTarget` | `number \| null` | ID of the player Beschützer protects this night |
 | `beschuetzerLastTarget` | `number \| null` | ID of the player Beschützer protected on the previous resolved night |
+| `wildesKindVorbild` | `number \| null` | ID of the player chosen as Wildes Kind's role model in night 1 |
 | `verfluchterConvertedThisNight` | `number \| null` | ID of a Verfluchter converted by wolves this night, used for the GM notification step and same-night role effects |
 | `harterBurscheWounded` | `number \| null` | ID of a Harter Bursche carrying a delayed wolf-attack wound |
 | `harterBurscheWoundedThisNight` | `number \| null` | ID of a Harter Bursche newly wounded this night, used for the GM notification step |
@@ -71,7 +72,7 @@ All state specific to a single night's actions. Per-night state is cleared via `
 | `amorPick` | `number[]` | IDs of the two lovers, set in night 1 only |
 | `nightResolved` | `boolean` | Whether `resolveNight()` has run for this night |
 
-`resetNightActions()` resets all per-night fields except `beschuetzerLastTarget`, `harterBurscheWounded`, `urwolfUsed`, `witchHealUsed`, `witchPoisonUsed`, and `amorPick`, which persist across nights.
+`resetNightActions()` resets all per-night fields except `beschuetzerLastTarget`, `wildesKindVorbild`, `harterBurscheWounded`, `urwolfUsed`, `witchHealUsed`, `witchPoisonUsed`, and `amorPick`, which persist across nights.
 
 ### `useTriggerQueue` - `src/hooks/useTriggerQueue.ts`
 
@@ -255,7 +256,7 @@ Shared modules keep Local and Online behavior aligned:
 
 - `src/domain/gameState.ts` for initial/reset/assignment helpers.
 - `src/domain/roleDisplay.ts` for exact-role labels, including former-role displays after conversion.
-- `src/logic/gameLogic.ts` for team lookup, kills, triggers, and win checks.
+- `src/logic/gameLogic.ts` for team lookup, kills, triggers, conversion helpers, and win checks.
 - `src/constants/roles.ts` for role metadata and role ID validation.
 - `src/constants/gameOptions.ts` for win/reveal/winner option sets and default prefs.
 

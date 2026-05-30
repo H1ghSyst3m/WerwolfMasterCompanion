@@ -4,6 +4,7 @@ import {
   checkWin,
   clearHarterBurscheWoundForDeadPlayer,
   convertPlayerToWerewolf,
+  convertWildesKindIfVorbildNewlyDead,
   getHarterBurscheWoundedByWolfAttack,
   getNachtgastCollateralVictim,
   getUrwolfTransformTarget,
@@ -50,6 +51,15 @@ function isBeschuetzerTargetCandidate(room: ServerRoom, playerId: number): boole
   );
 }
 
+function isWildesKindVorbildCandidate(room: ServerRoom, playerId: number): boolean {
+  const wildesKind = room.players.find(player => player.alive && player.role === "wildeskind");
+  return Boolean(
+    wildesKind &&
+    playerId !== wildesKind.id &&
+    room.players.some(player => player.id === playerId && player.alive)
+  );
+}
+
 export function applyNightActionPatch(room: ServerRoom, payload: unknown): void {
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) return;
   const patch = payload as Partial<NightActionState>;
@@ -72,6 +82,12 @@ export function applyNightActionPatch(room: ServerRoom, payload: unknown): void 
     if (patch.beschuetzerTarget === null) room.beschuetzerTarget = null;
     if (isNonNegativeInteger(patch.beschuetzerTarget) && isBeschuetzerTargetCandidate(room, patch.beschuetzerTarget)) {
       room.beschuetzerTarget = patch.beschuetzerTarget;
+    }
+  }
+  if ("wildesKindVorbild" in patch) {
+    if (patch.wildesKindVorbild === null) room.wildesKindVorbild = null;
+    if (isNonNegativeInteger(patch.wildesKindVorbild) && isWildesKindVorbildCandidate(room, patch.wildesKindVorbild)) {
+      room.wildesKindVorbild = patch.wildesKindVorbild;
     }
   }
   if ("urwolfTransform" in patch && isNullableBoolean(patch.urwolfTransform)) room.urwolfTransform = patch.urwolfTransform;
@@ -150,6 +166,17 @@ export function advanceNightStep(room: ServerRoom): void {
   room.detectivePicks = [];
   room.detectiveRevealed = false;
   room.nightStepIdx += 1;
+}
+
+function applyWildesKindConversion(
+  room: ServerRoom,
+  previousPlayers: ServerRoomPlayer[],
+  resolvedPlayers: ServerRoomPlayer[],
+): ServerRoomPlayer[] {
+  const result = convertWildesKindIfVorbildNewlyDead(previousPlayers, resolvedPlayers, room.wildesKindVorbild);
+  if (!result.converted) return resolvedPlayers;
+  addLogText(room, `🌿 ${result.converted.name} verliert sein Vorbild und wird heimlich zum Werwolf.`);
+  return mergePublicPlayers(room, result.players);
 }
 
 export function resolveNight(room: ServerRoom): void {
@@ -275,6 +302,7 @@ export function resolveNight(room: ServerRoom): void {
   if (room.harterBurscheWoundedThisNight !== null && survivingWounded !== room.harterBurscheWoundedThisNight) {
     room.harterBurscheWoundedThisNight = null;
   }
+  updatedPlayers = applyWildesKindConversion(room, room.players, updatedPlayers);
   room.dayDeaths = updatedPlayers.filter(
     player => !player.alive && room.players.find(previous => previous.id === player.id)?.alive,
   );
@@ -299,6 +327,7 @@ export function resolveHunter(room: ServerRoom, targetId: number | null): void {
     const result = killPlayer(targetId, "Jäger", updatedPlayers);
     updatedPlayers = mergePublicPlayers(room, result.players);
     result.logs.forEach(log => addLogText(room, log));
+    updatedPlayers = applyWildesKindConversion(room, beforeKill, updatedPlayers);
     const newDeaths = updatedPlayers.filter(player => !player.alive && beforeKill.find(previous => previous.id === player.id)?.alive);
     room.dayDeaths = [...room.dayDeaths, ...newDeaths];
     room.harterBurscheWounded = clearHarterBurscheWoundForDeadPlayer(updatedPlayers, room.harterBurscheWounded);
@@ -348,7 +377,7 @@ export function dayVote(room: ServerRoom, playerId: number | undefined): void {
   addLogText(room, `🗳️ ${player.name} wurde vom Dorf hingerichtet.`);
   const result = killPlayer(playerId, "Abstimmung", room.players);
   result.logs.forEach(log => addLogText(room, log));
-  room.players = mergePublicPlayers(room, result.players);
+  room.players = applyWildesKindConversion(room, room.players, mergePublicPlayers(room, result.players));
   room.harterBurscheWounded = clearHarterBurscheWoundForDeadPlayer(room.players, room.harterBurscheWounded);
   room.harterBurscheWoundedThisNight = clearHarterBurscheWoundForDeadPlayer(room.players, room.harterBurscheWoundedThisNight);
   room.dayVoteDone = true;
