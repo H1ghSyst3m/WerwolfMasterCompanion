@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Btn } from "../ui/Btn";
 import { ConfirmModal } from "../ui/ConfirmModal";
+import { RulesButton } from "../ui/RulesButton";
 import { RoomJoinQr } from "./RoomJoinQr";
 import type { OnlineGmSnapshot } from "../../online/messages";
 
@@ -24,6 +25,10 @@ export function OnlineLobby({ snapshot, onStartSetup, onCloseRoom, onTransferHos
   return (
     <div className="h-full overflow-y-auto bg-gradient-to-b from-indigo-950 to-gray-950 text-white">
       <div className="min-h-full max-w-md mx-auto px-4 py-6 flex flex-col">
+        <div className="flex justify-end mb-4">
+          <RulesButton />
+        </div>
+
         <div className="text-center mb-6">
           <p className="text-gray-400 text-sm mb-2">Raumcode</p>
           <div className="text-5xl font-black tracking-widest">{snapshot.roomCode}</div>

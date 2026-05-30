@@ -18,12 +18,18 @@ export type RoleId =
   | "harterbursche";
 
 // Role definition
+export interface RoleRule {
+  title: string;
+  text: string;
+}
+
 export interface Role {
   name: string;
   icon: string;
   team: "wolf" | "village";
   cat: "classic" | "special";
   desc: string;
+  rules: RoleRule[];
   unique?: boolean;
 }
 

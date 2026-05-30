@@ -13,6 +13,7 @@ import { PlayerOverlay } from "../components/PlayerOverlay";
 import { ConfirmModal } from "../components/ui/ConfirmModal";
 import { Modal } from "../components/ui/Modal";
 import { Btn } from "../components/ui/Btn";
+import { RulesButton } from "../components/ui/RulesButton";
 import { OnlineLobby } from "../components/online/OnlineLobby";
 import type { OnlineGmSnapshot } from "./messages";
 import type { ClientCommand } from "./messages";
@@ -197,6 +198,13 @@ export function OnlineGmController({ snapshot, sendCommand }: OnlineGmController
     </button>
   );
 
+  const setupHeaderAction = (
+    <div className="flex items-center gap-2">
+      <RulesButton label="📖" />
+      {cancelGameButton}
+    </div>
+  );
+
   const cancelGameModal = cancelOpen && (
     <ConfirmModal
       title="Spiel abbrechen?"
@@ -236,7 +244,7 @@ export function OnlineGmController({ snapshot, sendCommand }: OnlineGmController
           roleReveal={false}
           setRoleReveal={() => undefined}
           hideRoleReveal
-          headerAction={cancelGameButton}
+          headerAction={setupHeaderAction}
           onBack={() => sendCommand({ type: "gm:unlockLobby" })}
           onNext={() => sendCommand({ type: "gm:goToAssignment" })}
         />
@@ -258,7 +266,7 @@ export function OnlineGmController({ snapshot, sendCommand }: OnlineGmController
           setPlayers={setPlayers}
           shuffleRoles={() => sendCommand({ type: "gm:shuffleRoles" })}
           startGame={() => sendCommand({ type: "gm:startGame" })}
-          headerAction={cancelGameButton}
+          headerAction={setupHeaderAction}
           onBack={() => sendCommand({ type: "gm:lockLobby" })}
         />
         {cancelGameModal}
@@ -270,7 +278,8 @@ export function OnlineGmController({ snapshot, sendCommand }: OnlineGmController
     return (
       <div className="h-full overflow-y-auto bg-gradient-to-b from-indigo-950 to-gray-950 text-white">
         <div className="min-h-full max-w-md mx-auto px-4 py-6 flex flex-col">
-          <div className="flex justify-end mb-3">
+          <div className="flex justify-end gap-2 mb-3">
+            <RulesButton />
             {cancelGameButton}
           </div>
           <div className="text-center mb-6">
@@ -330,6 +339,7 @@ export function OnlineGmController({ snapshot, sendCommand }: OnlineGmController
             <span className="text-gray-400 text-sm ml-2">{isNight ? "Nacht" : "Tag"} · {snapshot.roomCode}</span>
           </div>
           <div className="flex gap-2">
+            <RulesButton label="📖" cls="px-3 py-1.5 border-gray-800" />
             {cancelGameButton}
             <button aria-label="Spieler anzeigen" onClick={() => setShowPlayers(true)} className="px-3 py-1.5 bg-gray-800 rounded-lg text-sm">👥</button>
             <button aria-label="Spielprotokoll anzeigen" onClick={() => setShowLog(true)} className="px-3 py-1.5 bg-gray-800 rounded-lg text-sm">📜</button>

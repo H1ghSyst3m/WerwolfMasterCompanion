@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Btn } from "../ui/Btn";
+import { RulesButton } from "../ui/RulesButton";
 import type { OnlineRoomHook } from "../../online/useOnlineRoom";
 
 interface OnlineHomeProps {
@@ -29,9 +30,12 @@ export function OnlineHome({ online, initialRoomCode = "", onBack }: OnlineHomeP
       <div className="min-h-full max-w-md mx-auto px-4 py-6 flex flex-col">
         <header className="flex items-center justify-between mb-6">
           <button onClick={onBack} className="text-gray-400 hover:text-white px-2 py-1">← Zurück</button>
-          <span className={`text-xs px-2 py-1 rounded-full ${online.status === "open" ? "bg-green-900/50 text-green-300" : "bg-gray-800 text-gray-400"}`}>
-            {statusText}
-          </span>
+          <div className="flex items-center gap-2">
+            <RulesButton label="📖" />
+            <span className={`text-xs px-2 py-1 rounded-full ${online.status === "open" ? "bg-green-900/50 text-green-300" : "bg-gray-800 text-gray-400"}`}>
+              {statusText}
+            </span>
+          </div>
         </header>
 
         <div className="text-center mb-6">

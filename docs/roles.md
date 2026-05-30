@@ -7,6 +7,7 @@ All roles are defined in `src/constants/roles.ts` and typed via the `Role` inter
 ## Implementation Notes
 
 - `ROLES` is the runtime source for role metadata, team lookup, and role ID validation.
+- Keep role mechanics, in-app role descriptions, in-app role rules, and this document in sync. Any change to a role's behavior, player-facing description, or rules text should update `src/constants/roles.ts` and this document in the same change.
 - `ROLE_IDS` / `ROLE_ID_SET` are derived from `ROLES`; do not maintain a second role list.
 - `getTeam(role)` reads team metadata from `ROLES` and safely falls back to `"village"` for malformed runtime values.
 - Team classification and team membership checks should use `getTeam()` or effective-team helpers, not hardcoded role ID checks. Role-specific mechanics may still use explicit role checks via `getEffectiveRole()` or direct role IDs where exact identity matters.
@@ -18,12 +19,18 @@ All roles are defined in `src/constants/roles.ts` and typed via the `Role` inter
 ## Role Type
 
 ```ts
+interface RoleRule {
+  title: string;
+  text: string;
+}
+
 interface Role {
   name: string;
   icon: string;
   team: "wolf" | "village";
   cat: "classic" | "special";
   desc: string;
+  rules: RoleRule[];
   unique?: boolean;  // if true, max 1 per game
 }
 ```

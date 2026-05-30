@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Btn } from "../ui/Btn";
 import { SetupScreenShell } from "./SetupScreenShell";
 import type { Player } from "../../types";
@@ -10,6 +11,7 @@ interface SetupStep1Props {
   removePlayer: (id: number) => void;
   onNext: () => void;
   clearPlayers?: () => void;
+  headerAction?: ReactNode;
 }
 
 export function SetupStep1({
@@ -20,11 +22,13 @@ export function SetupStep1({
   removePlayer,
   onNext,
   clearPlayers,
+  headerAction,
 }: SetupStep1Props) {
   return (
     <SetupScreenShell
       step={1}
       title="Spieler hinzufügen"
+      headerAction={headerAction}
       footer={
         <>
           <Btn
