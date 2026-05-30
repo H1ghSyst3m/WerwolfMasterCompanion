@@ -61,6 +61,13 @@ function isSaveState(v: unknown): v is SaveState {
     !Number.isInteger(s.beschuetzerLastTarget) ||
     s.beschuetzerLastTarget < 0
   )) return false;
+  if (s.wildesKindVorbild === undefined) s.wildesKindVorbild = null;
+  if (s.wildesKindVorbild !== null && (
+    typeof s.wildesKindVorbild !== "number" ||
+    !Number.isFinite(s.wildesKindVorbild) ||
+    !Number.isInteger(s.wildesKindVorbild) ||
+    s.wildesKindVorbild < 0
+  )) return false;
   if (s.verfluchterConvertedThisNight === undefined) s.verfluchterConvertedThisNight = null;
   if (s.verfluchterConvertedThisNight !== null && (
     typeof s.verfluchterConvertedThisNight !== "number" ||

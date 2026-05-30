@@ -6,6 +6,7 @@ import { NightStepUrwolf } from "./NightStepUrwolf";
 import { NightStepUrwolfInfo } from "./NightStepUrwolfInfo";
 import { NightStepAmor } from "./NightStepAmor";
 import { NightStepLovers } from "./NightStepLovers";
+import { NightStepWildesKind } from "./NightStepWildesKind";
 import { NightStepNachtgast } from "./NightStepNachtgast";
 import { NightStepBeschuetzer } from "./NightStepBeschuetzer";
 import { NightStepSeer } from "./NightStepSeer";
@@ -35,6 +36,8 @@ interface NightPhaseProps {
   beschuetzerTarget: number | null;
   beschuetzerLastTarget: number | null;
   setBeschuetzerTarget: (id: number) => void;
+  wildesKindVorbild: number | null;
+  setWildesKindVorbild: (id: number) => void;
   verfluchterConvertedThisNight: number | null;
   harterBurscheWoundedThisNight: number | null;
   urwolfTransformTarget: number | null;
@@ -81,6 +84,8 @@ export function NightPhase({
   beschuetzerTarget,
   beschuetzerLastTarget,
   setBeschuetzerTarget,
+  wildesKindVorbild,
+  setWildesKindVorbild,
   verfluchterConvertedThisNight,
   harterBurscheWoundedThisNight,
   urwolfTransformTarget,
@@ -118,6 +123,7 @@ export function NightPhase({
   const getNightStepPlayers = (stepId: NightStepId): Player[] | null => {
     const roleMap: Partial<Record<NightStepId, RoleId[]>> = {
       amor: ["amor"],
+      wildeskind: ["wildeskind"],
       nachtgast: ["nachtgast"],
       beschuetzer: ["beschuetzer"],
       urwolf: ["urwolf"],
@@ -234,6 +240,16 @@ export function NightPhase({
         <NightStepLovers
           players={players}
           amorPick={amorPick}
+          addLog={addLog}
+          advanceNightStep={advanceNightStep}
+        />
+      )}
+
+      {currentNightStep.active && currentNightStep.id === "wildeskind" && (
+        <NightStepWildesKind
+          alive={alive}
+          wildesKindVorbild={wildesKindVorbild}
+          setWildesKindVorbild={setWildesKindVorbild}
           addLog={addLog}
           advanceNightStep={advanceNightStep}
         />

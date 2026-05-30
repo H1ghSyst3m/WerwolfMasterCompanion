@@ -39,7 +39,7 @@ Online Mode needs the included Node WebSocket server. Rooms are stored in memory
 - Configurable role/team reveal after day eliminations.
 - Day discussion timer.
 - Day voting and execution flow.
-- Night actions for wolves, seer-style roles, witch, Amor, Urwolf, Nachtgast, and Beschützer.
+- Night actions for wolves, seer-style roles, witch, Amor, Wildes Kind, Urwolf, Nachtgast, and Beschützer.
 - Hunter death triggers, including chained deaths.
 - Lovers and heartbreak deaths.
 - Special wins for Narr, Dorftrottel, and lovers.
@@ -63,6 +63,7 @@ Online Mode needs the included Node WebSocket server. Rooms are stored in memory
 - Urwolf
 - Nachtgast
 - Beschützer
+- Wildes Kind
 - Verfluchter
 - Harter Bursche
 

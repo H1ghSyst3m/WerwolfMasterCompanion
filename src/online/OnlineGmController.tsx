@@ -386,6 +386,8 @@ export function OnlineGmController({ snapshot, sendCommand }: OnlineGmController
             beschuetzerTarget={snapshot.beschuetzerTarget}
             beschuetzerLastTarget={snapshot.beschuetzerLastTarget}
             setBeschuetzerTarget={id => updateNightAction({ beschuetzerTarget: id })}
+            wildesKindVorbild={snapshot.wildesKindVorbild}
+            setWildesKindVorbild={id => updateNightAction({ wildesKindVorbild: id })}
             verfluchterConvertedThisNight={snapshot.verfluchterConvertedThisNight}
             harterBurscheWoundedThisNight={snapshot.harterBurscheWoundedThisNight}
             urwolfTransformTarget={urwolfTransformTargetId}

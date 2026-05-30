@@ -178,18 +178,19 @@ Night steps are built dynamically each round by `buildNightSteps()` in `src/logi
 | 1 | `sleep` | Always |
 | 2 | `amor` | `hadRole("amor") && round === 1` |
 | 3 | `lovers` | `hadRole("amor") && round === 1` |
-| 4 | `nachtgast` | `hadRole("nachtgast")` |
-| 5 | `beschuetzer` | `hadRole("beschuetzer")` |
-| 6 | `wolves` | Always |
-| 7 | `verfluchter` | `verfluchterConvertedThisNight !== null` |
-| 8 | `urwolf` | `hadRole("urwolf")` |
-| 9 | `urwolfinfo` | Successful Urwolf transform target exists |
-| 10 | `seer` | `hadRole("seher")` |
-| 11 | `auraseer` | `hadRole("auraseher")` |
-| 12 | `detective` | `hadRole("detektiv")` |
-| 13 | `witch` | `hadRole("hexe")` |
-| 14 | `harterbursche` | `harterBurscheWoundedThisNight !== null` |
-| 15 | `dawn` | Always |
+| 4 | `wildeskind` | `hadRole("wildeskind") && round === 1` |
+| 5 | `nachtgast` | `hadRole("nachtgast")` |
+| 6 | `beschuetzer` | `hadRole("beschuetzer")` |
+| 7 | `wolves` | Always |
+| 8 | `verfluchter` | `verfluchterConvertedThisNight !== null` |
+| 9 | `urwolf` | `hadRole("urwolf")` |
+| 10 | `urwolfinfo` | Successful Urwolf transform target exists |
+| 11 | `seer` | `hadRole("seher")` |
+| 12 | `auraseer` | `hadRole("auraseher")` |
+| 13 | `detective` | `hadRole("detektiv")` |
+| 14 | `witch` | `hadRole("hexe")` |
+| 15 | `harterbursche` | `harterBurscheWoundedThisNight !== null` |
+| 16 | `dawn` | Always |
 
 If a role is dead or exhausted, the step still appears to preserve rhythm but shows an inactive placeholder.
 
@@ -228,6 +229,15 @@ If a role is dead or exhausted, the step still appears to preserve rhythm but sh
 - If wolves attack the protected player, the wolf attack is prevented: no main target death, no Nachtgast collateral, no Verfluchter conversion, and no Urwolf transform.
 - Protection only applies to the wolf attack. Witch poison, Hunter shots, day vote, lover deaths, and other non-wolf effects still kill normally.
 - `beschuetzerTarget` stores the current protected player. `beschuetzerLastTarget` stores the previous protected player to block repeat protection.
+
+### Wildes Kind
+
+- Wildes Kind wakes only in night 1, after Amor/Liebespaar and before Nachtgast/Beschützer/Werwölfe.
+- The GM chooses `wildesKindVorbild`, one other living player. The role model may belong to either team.
+- Conversion is checked only when death information is resolved for the app: after the night report is known, after a day vote, and after follow-up deaths such as Hunter shots or lover heartbreak.
+- If the stored role model is newly dead and the Wildes Kind is alive, the current role changes to `"werwolf"` while `originalRole` stays `"wildeskind"`.
+- Wolf target selection, Witch poison selection, and `killPlayer()` do not trigger the conversion by themselves.
+- The conversion is secret: it creates a GM log entry and updates the private role card, but player snapshots do not expose logs.
 
 ### Verfluchter
 

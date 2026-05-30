@@ -46,6 +46,16 @@ export function buildNightSteps({
     });
   }
 
+  if (hadRole("wildeskind") && round === 1) {
+    steps.push({
+      id: "wildeskind",
+      title: "Wildes Kind erwacht",
+      icon: "🌿",
+      desc: "Wildes Kind wählt ein lebendes Vorbild.",
+      active: aliveWithRole("wildeskind"),
+    });
+  }
+
   if (hadRole("nachtgast")) {
     steps.push({
       id: "nachtgast",

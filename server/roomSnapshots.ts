@@ -77,6 +77,7 @@ function serializeRuntime(room: ServerRoom): Omit<OnlineGmSnapshot, "view" | "ro
     nachtgastTarget: room.nachtgastTarget,
     beschuetzerTarget: room.beschuetzerTarget,
     beschuetzerLastTarget: room.beschuetzerLastTarget,
+    wildesKindVorbild: room.wildesKindVorbild,
     verfluchterConvertedThisNight: room.verfluchterConvertedThisNight,
     harterBurscheWounded: room.harterBurscheWounded,
     harterBurscheWoundedThisNight: room.harterBurscheWoundedThisNight,

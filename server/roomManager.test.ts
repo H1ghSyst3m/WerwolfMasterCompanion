@@ -152,6 +152,24 @@ function createRoomWithHarterBursche(includeNachtgast = false) {
   return manager;
 }
 
+function wildesKindPlayers(overrides: Partial<Record<number, Partial<Player>>> = {}): Player[] {
+  const players = [
+    { id: 1, name: "Wolf", role: "werwolf", originalRole: "werwolf", alive: true, lover: null },
+    { id: 2, name: "Wildes Kind", role: "wildeskind", originalRole: "wildeskind", alive: true, lover: null },
+    { id: 3, name: "Vorbild", role: "dorfbewohner", originalRole: "dorfbewohner", alive: true, lover: null },
+    { id: 4, name: "Dorf 1", role: "dorfbewohner", originalRole: "dorfbewohner", alive: true, lover: null },
+    { id: 5, name: "Dorf 2", role: "dorfbewohner", originalRole: "dorfbewohner", alive: true, lover: null },
+  ] satisfies Player[];
+  return players.map(player => ({ ...player, ...overrides[player.id] }));
+}
+
+function createRoomWithWildesKind(overrides: Partial<Record<number, Partial<Player>>> = {}) {
+  const { manager } = createRoomWithPlayers();
+  send(manager, "gm", { type: "gm:setPlayers", payload: { players: wildesKindPlayers(overrides) } });
+  send(manager, "gm", { type: "gm:updateNightAction", payload: { wildesKindVorbild: 3 } });
+  return manager;
+}
+
 function advanceFromSleepToWolves(manager: RoomManager): void {
   send(manager, "gm", { type: "gm:advanceNightStep" });
 }
@@ -587,6 +605,33 @@ describe("RoomManager", () => {
     expect(steps.map(step => step.id)).toEqual(["sleep", "amor", "lovers", "nachtgast", "beschuetzer", "wolves", "urwolf", "dawn"]);
   });
 
+  it("builds the Wildes Kind step only in round 1 after Amor", () => {
+    const baseParams = {
+      urwolfUsed: false,
+      witchHealUsed: false,
+      witchPoisonUsed: false,
+      verfluchterConvertedThisNight: null,
+      hadRole: (roleId: RoleId) =>
+        roleId === "amor" ||
+        roleId === "wildeskind" ||
+        roleId === "nachtgast" ||
+        roleId === "beschuetzer" ||
+        roleId === "urwolf",
+      aliveWithRole: (roleId: RoleId) =>
+        roleId === "amor" ||
+        roleId === "wildeskind" ||
+        roleId === "nachtgast" ||
+        roleId === "beschuetzer" ||
+        roleId === "urwolf",
+      amorPick: [2, 3],
+    };
+
+    expect(buildNightSteps({ ...baseParams, round: 1 }).map(step => step.id))
+      .toEqual(["sleep", "amor", "lovers", "wildeskind", "nachtgast", "beschuetzer", "wolves", "urwolf", "dawn"]);
+    expect(buildNightSteps({ ...baseParams, round: 2 }).map(step => step.id))
+      .toEqual(["sleep", "nachtgast", "beschuetzer", "wolves", "urwolf", "dawn"]);
+  });
+
   it("adds the Verfluchter notification only after conversion", () => {
     const baseParams = {
       round: 1,
@@ -706,6 +751,163 @@ describe("RoomManager", () => {
       verfluchterConvertedThisNight: 2,
       urwolfTransform: true,
     })).toBeNull();
+  });
+
+  it("only accepts valid Wildes Kind role models and keeps player snapshots private", () => {
+    const { manager } = createRoomWithPlayers();
+    send(manager, "gm", { type: "gm:setPlayers", payload: { players: wildesKindPlayers({ 5: { alive: false } }) } });
+
+    const messages = send(manager, "gm", {
+      type: "gm:updateNightAction",
+      payload: { wildesKindVorbild: 3 },
+    });
+    let snapshot = latestGmSnapshot(messages);
+    expect(snapshot.wildesKindVorbild).toBe(3);
+    expect(latestPlayerSnapshot(messages)).not.toHaveProperty("wildesKindVorbild");
+
+    snapshot = latestGmSnapshot(send(manager, "gm", {
+      type: "gm:updateNightAction",
+      payload: { wildesKindVorbild: null },
+    }));
+    expect(snapshot.wildesKindVorbild).toBeNull();
+
+    snapshot = latestGmSnapshot(send(manager, "gm", {
+      type: "gm:updateNightAction",
+      payload: { wildesKindVorbild: 3 },
+    }));
+    expect(snapshot.wildesKindVorbild).toBe(3);
+
+    snapshot = latestGmSnapshot(send(manager, "gm", {
+      type: "gm:updateNightAction",
+      payload: { wildesKindVorbild: 2 },
+    }));
+    expect(snapshot.wildesKindVorbild).toBe(3);
+
+    snapshot = latestGmSnapshot(send(manager, "gm", {
+      type: "gm:updateNightAction",
+      payload: { wildesKindVorbild: 5 },
+    }));
+    expect(snapshot.wildesKindVorbild).toBe(3);
+
+    snapshot = latestGmSnapshot(send(manager, "gm", {
+      type: "gm:updateNightAction",
+      payload: { wildesKindVorbild: 99 },
+    }));
+    expect(snapshot.wildesKindVorbild).toBe(3);
+  });
+
+  it("converts Wildes Kind when the role model dies in the night report", () => {
+    const manager = createRoomWithWildesKind();
+    send(manager, "gm", { type: "gm:updateNightAction", payload: { nightVictim: 3 } });
+
+    const messages = send(manager, "gm", { type: "gm:resolveNight" });
+    const snapshot = latestGmSnapshot(messages);
+    const wildesKind = snapshot.players.find(player => player.id === 2);
+    const playerMessage = messages.find(
+      message => message.clientId === "p1" && message.message.type === "snapshot" && message.message.snapshot.view === "player",
+    )?.message;
+
+    expect(wildesKind?.role).toBe("werwolf");
+    expect(wildesKind?.originalRole).toBe("wildeskind");
+    expect(wildesKind?.alive).toBe(true);
+    expect(snapshot.dayDeaths.map(player => player.name)).toEqual(["Vorbild"]);
+    expect(snapshot.log.map(entry => entry.text)).toContain("🌿 Wildes Kind verliert sein Vorbild und wird heimlich zum Werwolf.");
+    if (playerMessage?.type === "snapshot" && playerMessage.snapshot.view === "player") {
+      expect(playerMessage.snapshot.player?.role).toBe("werwolf");
+      expect(playerMessage.snapshot).not.toHaveProperty("log");
+    }
+  });
+
+  it("does not convert Wildes Kind when the role model survives a prevented wolf attack", () => {
+    const protectedManager = createRoomWithWildesKind({
+      4: { role: "beschuetzer", originalRole: "beschuetzer" },
+    });
+    send(protectedManager, "gm", {
+      type: "gm:updateNightAction",
+      payload: { beschuetzerTarget: 3, nightVictim: 3 },
+    });
+
+    let snapshot = latestGmSnapshot(send(protectedManager, "gm", { type: "gm:resolveNight" }));
+    expect(snapshot.players.find(player => player.id === 2)?.role).toBe("wildeskind");
+    expect(snapshot.players.find(player => player.id === 3)?.alive).toBe(true);
+    expect(snapshot.dayDeaths).toEqual([]);
+
+    const healedManager = createRoomWithWildesKind({
+      4: { role: "hexe", originalRole: "hexe" },
+    });
+    send(healedManager, "gm", {
+      type: "gm:updateNightAction",
+      payload: { nightVictim: 3, witchHealThisRound: true },
+    });
+
+    snapshot = latestGmSnapshot(send(healedManager, "gm", { type: "gm:resolveNight" }));
+    expect(snapshot.players.find(player => player.id === 2)?.role).toBe("wildeskind");
+    expect(snapshot.players.find(player => player.id === 3)?.alive).toBe(true);
+    expect(snapshot.dayDeaths).toEqual([]);
+    expect(snapshot.witchHealUsed).toBe(true);
+  });
+
+  it("converts Wildes Kind only after Witch poison is resolved", () => {
+    const manager = createRoomWithWildesKind({
+      4: { role: "hexe", originalRole: "hexe" },
+    });
+
+    let snapshot = latestGmSnapshot(send(manager, "gm", {
+      type: "gm:updateNightAction",
+      payload: { witchPoisonTarget: 3 },
+    }));
+    expect(snapshot.players.find(player => player.id === 2)?.role).toBe("wildeskind");
+    expect(snapshot.players.find(player => player.id === 3)?.alive).toBe(true);
+
+    snapshot = latestGmSnapshot(send(manager, "gm", { type: "gm:resolveNight" }));
+    expect(snapshot.players.find(player => player.id === 2)?.role).toBe("werwolf");
+    expect(snapshot.players.find(player => player.id === 3)?.alive).toBe(false);
+    expect(snapshot.witchPoisonUsed).toBe(true);
+  });
+
+  it("converts Wildes Kind after the role model is eliminated by day vote", () => {
+    const manager = createRoomWithWildesKind();
+
+    const snapshot = latestGmSnapshot(send(manager, "gm", { type: "gm:dayVote", payload: { playerId: 3 } }));
+
+    expect(snapshot.players.find(player => player.id === 2)?.role).toBe("werwolf");
+    expect(snapshot.players.find(player => player.id === 2)?.originalRole).toBe("wildeskind");
+    expect(snapshot.players.find(player => player.id === 3)?.alive).toBe(false);
+  });
+
+  it("converts Wildes Kind after Hunter shot and heartbreak follow-up deaths", () => {
+    const hunterManager = createRoomWithWildesKind({
+      4: { role: "jaeger", originalRole: "jaeger" },
+    });
+    let snapshot = latestGmSnapshot(send(hunterManager, "gm", { type: "gm:dayVote", payload: { playerId: 4 } }));
+    expect(snapshot.players.find(player => player.id === 2)?.role).toBe("wildeskind");
+    expect(snapshot.triggerQueue).toHaveLength(1);
+
+    snapshot = latestGmSnapshot(send(hunterManager, "gm", { type: "gm:resolveHunter", payload: { targetId: 3 } }));
+    expect(snapshot.players.find(player => player.id === 2)?.role).toBe("werwolf");
+    expect(snapshot.players.find(player => player.id === 3)?.alive).toBe(false);
+
+    const loverManager = createRoomWithWildesKind({
+      3: { lover: 4 },
+      4: { lover: 3 },
+    });
+    snapshot = latestGmSnapshot(send(loverManager, "gm", { type: "gm:dayVote", payload: { playerId: 4 } }));
+    expect(snapshot.players.find(player => player.id === 2)?.role).toBe("werwolf");
+    expect(snapshot.players.find(player => player.id === 3)?.alive).toBe(false);
+    expect(snapshot.log.map(entry => entry.text)).toContain("💔 Dorf 1 war verliebt! Vorbild stirbt an gebrochenem Herzen.");
+  });
+
+  it("does not convert Wildes Kind if it is already dead when the role model dies", () => {
+    const manager = createRoomWithWildesKind();
+    send(manager, "gm", { type: "gm:setPlayers", payload: { players: wildesKindPlayers({ 2: { alive: false } }) } });
+    send(manager, "gm", { type: "gm:updateNightAction", payload: { nightVictim: 3 } });
+
+    const snapshot = latestGmSnapshot(send(manager, "gm", { type: "gm:resolveNight" }));
+
+    expect(snapshot.players.find(player => player.id === 2)?.role).toBe("wildeskind");
+    expect(snapshot.players.find(player => player.id === 2)?.alive).toBe(false);
+    expect(snapshot.players.find(player => player.id === 3)?.alive).toBe(false);
+    expect(snapshot.log.map(entry => entry.text)).not.toContain("🌿 Wildes Kind verliert sein Vorbild und wird heimlich zum Werwolf.");
   });
 
   it("only accepts alive non-Nachtgast players as Nachtgast hosts", () => {
@@ -1273,12 +1475,14 @@ describe("RoomManager", () => {
       "missing-role": 3,
       nachtgast: 1,
       beschuetzer: 1,
+      wildeskind: 1,
       verfluchter: 1,
     } as unknown as RoleCounts;
     const pool = buildRolePool(roleCounts);
     expect(ROLES.beschuetzer).toMatchObject({ team: "village", cat: "special", unique: true });
+    expect(ROLES.wildeskind).toMatchObject({ team: "village", cat: "special", unique: true });
     expect(ROLES.verfluchter).toMatchObject({ team: "village", cat: "special", unique: true });
-    expect(pool).toEqual(["werwolf", "nachtgast", "beschuetzer", "verfluchter"]);
+    expect(pool).toEqual(["werwolf", "nachtgast", "beschuetzer", "wildeskind", "verfluchter"]);
     expect(roleCountTotal(roleCounts)).toBe(pool.length);
   });
 
@@ -1293,6 +1497,8 @@ describe("RoomManager", () => {
     expect(isClientMessage({ type: "gm:updateNightAction", payload: { nachtgastTarget: 2 } })).toBe(true);
     expect(isClientMessage({ type: "gm:updateNightAction", payload: { nachtgastTarget: -1 } })).toBe(false);
     expect(isClientMessage({ type: "gm:updateNightAction", payload: { beschuetzerTarget: 2 } })).toBe(true);
+    expect(isClientMessage({ type: "gm:updateNightAction", payload: { wildesKindVorbild: 2 } })).toBe(true);
+    expect(isClientMessage({ type: "gm:updateNightAction", payload: { wildesKindVorbild: -1 } })).toBe(false);
     expect(isClientMessage({ type: "gm:updateNightAction", payload: { beschuetzerLastTarget: 2 } })).toBe(false);
     expect(isClientMessage({ type: "gm:setPlayers", payload: { players: [{ id: "bad" }] } })).toBe(false);
     expect(isClientMessage({

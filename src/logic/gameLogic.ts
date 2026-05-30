@@ -146,6 +146,34 @@ export function convertPlayerToWerewolf(ps: Player[], playerId: number): Player[
   return ps.map(p => p.id === playerId ? { ...p, role: "werwolf" as RoleId } : p);
 }
 
+export interface WildesKindConversionResult {
+  players: Player[];
+  converted: Player | null;
+}
+
+export function convertWildesKindIfVorbildNewlyDead(
+  previousPlayers: Player[],
+  resolvedPlayers: Player[],
+  wildesKindVorbild: number | null,
+): WildesKindConversionResult {
+  if (wildesKindVorbild === null) return { players: resolvedPlayers, converted: null };
+  const wasVorbildAlive = previousPlayers.some(player => player.id === wildesKindVorbild && player.alive);
+  const isVorbildDead = resolvedPlayers.some(player => player.id === wildesKindVorbild && !player.alive);
+  if (!wasVorbildAlive || !isVorbildDead) return { players: resolvedPlayers, converted: null };
+
+  const wildesKind = resolvedPlayers.find(player =>
+    player.alive &&
+    player.originalRole === "wildeskind" &&
+    player.role !== "werwolf"
+  ) ?? null;
+  if (!wildesKind) return { players: resolvedPlayers, converted: null };
+
+  return {
+    players: convertPlayerToWerewolf(resolvedPlayers, wildesKind.id),
+    converted: wildesKind,
+  };
+}
+
 export function killPlayer(pid: number, cause: string, ps: Player[]): KillResult {
   let updated = ps.map(p => p.id === pid ? { ...p, alive: false } : p);
   const victim = updated.find(p => p.id === pid);

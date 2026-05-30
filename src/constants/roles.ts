@@ -103,6 +103,14 @@ export const ROLES: Record<RoleId, Role> = {
     unique: true,
     desc: "Wacht jede Nacht vor den Werwölfen auf und schützt einen anderen lebenden Spieler vor dem Werwolf-Angriff. Derselbe Spieler darf nicht zwei Nächte nacheinander geschützt werden.",
   },
+  wildeskind: {
+    name: "Wildes Kind",
+    icon: "🌿",
+    team: "village",
+    cat: "special",
+    unique: true,
+    desc: "Startet auf der Seite des Dorfes. Wählt in der ersten Nacht ein anderes lebendes Vorbild und wird heimlich zum Werwolf, sobald dessen Tod bekannt wird.",
+  },
   verfluchter: {
     name: "Verfluchter",
     icon: "⛓️",
