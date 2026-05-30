@@ -8,6 +8,50 @@ import { RoleInfoModal } from "../ui/RoleInfoModal";
 import { SetupScreenShell } from "./SetupScreenShell";
 import type { RoleId, RoleCounts, WinMode, RevealMode } from "../../types";
 
+type RoleCategory = "classic" | "special";
+type RoleGroup = "wolf" | "village" | "specialGoal";
+
+const SPECIAL_GOAL_ROLES = new Set<RoleId>(["narr", "dorftrottel"]);
+
+const ROLE_CATEGORY_LABELS: Record<RoleCategory, string> = {
+  classic: "Klassisch",
+  special: "Spezial",
+};
+
+const ROLE_GROUP_LABELS: Record<RoleGroup, string> = {
+  wolf: "Wolf-Team",
+  village: "Dorf-Team",
+  specialGoal: "Sonderziel",
+};
+
+function getRoleGroup(roleId: RoleId): RoleGroup {
+  if (ROLES[roleId].team === "wolf") return "wolf";
+  if (SPECIAL_GOAL_ROLES.has(roleId)) return "specialGoal";
+  return "village";
+}
+
+function roleGroupClasses(group: RoleGroup): { badge: string; border: string; text: string } {
+  if (group === "wolf") {
+    return {
+      badge: "border-red-800 bg-red-950/50 text-red-300",
+      border: "border-l-red-600",
+      text: "text-red-300",
+    };
+  }
+  if (group === "specialGoal") {
+    return {
+      badge: "border-amber-800 bg-amber-950/50 text-amber-300",
+      border: "border-l-amber-500",
+      text: "text-amber-300",
+    };
+  }
+  return {
+    badge: "border-sky-800 bg-sky-950/50 text-sky-300",
+    border: "border-l-sky-500",
+    text: "text-sky-300",
+  };
+}
+
 interface SetupStep2Props {
   players: { length: number };
   roleCounts: RoleCounts;
@@ -53,13 +97,34 @@ export function SetupStep2({
   const statusText = overLimit
     ? `${Math.abs(freeSlots)} zu viel`
     : freeSlots > 0
-      ? `Noch ${freeSlots} frei`
+      ? `${freeSlots} Dorfplätze`
       : "Voll";
   const statusClass = overLimit
     ? "border-red-800 bg-red-950/50 text-red-300"
     : freeSlots > 0
       ? "border-amber-800 bg-amber-950/40 text-amber-300"
       : "border-green-800 bg-green-950/40 text-green-300";
+
+  const villagerCount = displayRoleCounts.dorfbewohner ?? 0;
+  const selectedRoles = (Object.entries(ROLES) as [RoleId, typeof ROLES[RoleId]][])
+    .map(([id, role]) => ({ id, role, count: displayRoleCounts[id] ?? 0 }))
+    .filter(({ id, count }) => id !== "dorfbewohner" && count > 0);
+  const wolfCount = (Object.entries(displayRoleCounts) as [RoleId, number][])
+    .reduce((total, [id, count]) => total + (ROLES[id]?.team === "wolf" ? count : 0), 0);
+  const specialGoalCount = (Object.entries(displayRoleCounts) as [RoleId, number][])
+    .reduce((total, [id, count]) => total + (SPECIAL_GOAL_ROLES.has(id) ? count : 0), 0);
+  const villageTeamCount = totalRoles - wolfCount - specialGoalCount;
+  const balanceHint = wolfCount > suggested
+    ? "Viele Wölfe"
+    : wolfCount < suggested
+      ? "Wenig Wölfe"
+      : "Ausgewogen";
+  const balanceHintClass = wolfCount > suggested
+    ? "text-amber-300"
+    : wolfCount < suggested
+      ? "text-sky-300"
+      : "text-green-300";
+  const [activeCategory, setActiveCategory] = useState<RoleCategory>("classic");
 
   const updateRoleCount = (roleId: RoleId, count: number) => {
     setRoleCounts(prev => autoFillVillagers({ ...prev, [roleId]: count }, n));
@@ -84,16 +149,85 @@ export function SetupStep2({
         </Btn>
       }
     >
-      <div className="mb-4 space-y-2">
-        <div className="flex items-center justify-between gap-3">
-          <p className={`text-sm font-semibold ${totalRoles === n ? "text-green-400" : totalRoles > n ? "text-red-400" : "text-amber-400"}`}>
-            {totalRoles}/{n} Rollen vergeben
-          </p>
+      <div className="mb-4 rounded-2xl border border-gray-800 bg-gray-900/80 p-3">
+        <div className="grid grid-cols-3 divide-x divide-gray-800 text-center">
+          <div className="px-2">
+            <p className="text-lg font-bold text-white">{n}</p>
+            <p className="text-[11px] uppercase text-gray-500">Spieler</p>
+          </div>
+          <div className="px-2">
+            <p className={`text-lg font-bold ${totalRoles === n ? "text-green-400" : totalRoles > n ? "text-red-400" : "text-amber-400"}`}>
+              {totalRoles}/{n}
+            </p>
+            <p className="text-[11px] uppercase text-gray-500">Rollen</p>
+          </div>
+          <div className="px-2">
+            <p className={`text-lg font-bold ${overLimit ? "text-red-300" : freeSlots > 0 ? "text-amber-300" : "text-green-400"}`}>
+              {overLimit ? Math.abs(freeSlots) : Math.max(0, freeSlots)}
+            </p>
+            <p className="text-[11px] uppercase text-gray-500">{overLimit ? "Zu viel" : "Dorfplätze"}</p>
+          </div>
+        </div>
+        <div className="mt-3 flex items-center justify-between gap-2 rounded-xl border border-gray-800 bg-gray-950/70 px-3 py-2">
+          <div>
+            <p className="text-sm font-semibold">Balance</p>
+            <p className={`text-xs font-medium ${balanceHintClass}`}>{balanceHint} · empfohlen {suggested}</p>
+          </div>
           <span className={`shrink-0 rounded-lg border px-2.5 py-1 text-xs font-semibold ${statusClass}`}>
             {statusText}
           </span>
         </div>
-        <p className="text-gray-400 text-sm">Empfohlen: {suggested} Werwölfe für {n} Spieler</p>
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          <div className="rounded-xl border border-red-900/70 bg-red-950/25 px-3 py-2">
+            <p className="text-base font-bold text-red-300">{wolfCount}</p>
+            <p className="text-[11px] text-red-200/70">Wolf-Team</p>
+          </div>
+          <div className="rounded-xl border border-sky-900/70 bg-sky-950/25 px-3 py-2">
+            <p className="text-base font-bold text-sky-300">{villageTeamCount}</p>
+            <p className="text-[11px] text-sky-200/70">Dorf-Seite</p>
+          </div>
+          <div className="rounded-xl border border-amber-900/70 bg-amber-950/25 px-3 py-2">
+            <p className="text-base font-bold text-amber-300">{specialGoalCount}</p>
+            <p className="text-[11px] text-amber-200/70">Sonderziel</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mb-4 rounded-xl border border-green-900/70 bg-green-950/25 px-4 py-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="font-semibold text-green-200">Dorfbewohner automatisch: {villagerCount}</p>
+            <p className="mt-0.5 text-xs text-green-100/60">Füllt freie Dorfplätze bis zur Spielerzahl auf.</p>
+          </div>
+          <span className="shrink-0 rounded-lg border border-green-700 bg-green-900/50 px-2 py-1 text-xs font-bold text-green-200">
+            Auto
+          </span>
+        </div>
+      </div>
+
+      <div className="mb-4">
+        <div className="mb-2 flex items-center justify-between">
+          <h3 className="text-xs uppercase tracking-wider text-gray-400">Ausgewählt</h3>
+          <span className="text-xs text-gray-500">{selectedRoles.length} Rollenart{selectedRoles.length === 1 ? "" : "en"}</span>
+        </div>
+        {selectedRoles.length > 0 ? (
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {selectedRoles.map(({ id, role, count }) => {
+              const group = getRoleGroup(id);
+              const tone = roleGroupClasses(group);
+              return (
+                <div key={id} className={`shrink-0 rounded-xl border px-3 py-2 ${tone.badge}`}>
+                  <p className="text-sm font-bold">{role.icon} {count} {role.name}</p>
+                  <p className="text-[11px] opacity-80">{ROLE_GROUP_LABELS[group]}</p>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="rounded-xl border border-dashed border-gray-700 bg-gray-900 px-3 py-3 text-sm text-gray-400">
+            Noch keine Zusatzrollen gewählt.
+          </div>
+        )}
       </div>
 
       {/* Spielregeln (collapsible) */}
@@ -208,56 +342,77 @@ export function SetupStep2({
         )}
       </div>
 
-      {(["classic", "special"] as const).map(cat => (
-        <div key={cat}>
-          <h3 className="text-gray-400 text-xs uppercase tracking-wider mb-2">
-            {cat === "classic" ? "Klassisch" : "Spezial"}
-          </h3>
-          <div className="space-y-2 mb-4">
-            {(Object.entries(ROLES) as [RoleId, typeof ROLES[RoleId]][])
-              .filter(([, r]) => r.cat === cat)
-              .map(([id, r]) => {
-                const c = displayRoleCounts[id] ?? 0;
-                const isVillager = id === "dorfbewohner";
-                const max = r.unique ? 1 : n;
-                const canDecrease = !isVillager && c > 0;
-                const canIncrease = !isVillager && c < max && freeSlots > 0;
-                return (
-                  <div key={id} className="flex items-center justify-between bg-gray-900 rounded-xl px-4 py-3 border border-gray-800">
-                    <div className="min-w-0 flex items-center gap-2">
-                      <span className="truncate">{r.icon} {r.name}</span>
-                      <button onClick={() => setRoleInfoId(id)} className="text-gray-500 hover:text-gray-300 text-sm" aria-label={`Mehr Informationen zu ${r.name}`}>ℹ️</button>
-                    </div>
-                    {isVillager ? (
-                      <div className="flex min-w-[7.5rem] items-center justify-end gap-2">
-                        <span className="w-7 text-center font-bold">{c}</span>
-                        <span className="rounded-lg border border-gray-700 bg-gray-800 px-2 py-1 text-xs font-semibold text-gray-400">
-                          automatisch
-                        </span>
+      <div className="mb-4 grid grid-cols-2 gap-2 rounded-xl border border-gray-800 bg-gray-900 p-1">
+        {(["classic", "special"] as const).map(cat => (
+          <button
+            key={cat}
+            onClick={() => setActiveCategory(cat)}
+            aria-pressed={activeCategory === cat}
+            className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+              activeCategory === cat
+                ? "bg-purple-700 text-white shadow"
+                : "text-gray-400 hover:bg-gray-800 hover:text-white"
+            }`}
+          >
+            {ROLE_CATEGORY_LABELS[cat]}
+          </button>
+        ))}
+      </div>
+
+      <div className="space-y-4">
+        {(["wolf", "village", "specialGoal"] as const).map(group => {
+          const roles = (Object.entries(ROLES) as [RoleId, typeof ROLES[RoleId]][])
+            .filter(([id, role]) => id !== "dorfbewohner" && role.cat === activeCategory && getRoleGroup(id) === group);
+          if (roles.length === 0) return null;
+          const tone = roleGroupClasses(group);
+          return (
+            <section key={group}>
+              <h3 className={`mb-2 text-xs font-bold uppercase tracking-wider ${tone.text}`}>
+                {ROLE_GROUP_LABELS[group]}
+              </h3>
+              <div className="space-y-2">
+                {roles.map(([id, r]) => {
+                  const c = displayRoleCounts[id] ?? 0;
+                  const max = r.unique ? 1 : n;
+                  const canDecrease = c > 0;
+                  const canIncrease = c < max && freeSlots > 0;
+                  return (
+                    <div key={id} className={`border-l-4 ${tone.border} flex items-center justify-between rounded-xl border border-gray-800 bg-gray-900 px-3 py-3`}>
+                      <div className="min-w-0 flex flex-1 items-center gap-3">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gray-800 text-xl">{r.icon}</span>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="truncate font-semibold">{r.name}</p>
+                            <button onClick={() => setRoleInfoId(id)} className="text-gray-500 hover:text-gray-300 text-xs" aria-label={`Mehr Informationen zu ${r.name}`}>ℹ️</button>
+                          </div>
+                          <p className={`mt-0.5 text-xs ${tone.text}`}>
+                            {ROLE_GROUP_LABELS[getRoleGroup(id)]}{r.unique ? " · Einzigartig" : " · Mehrfach"}
+                          </p>
+                        </div>
                       </div>
-                    ) : (
-                      <div className="flex min-w-[7.5rem] items-center justify-end gap-3">
+                      <div className="ml-3 grid grid-cols-[2rem_2rem_2rem] items-center overflow-hidden rounded-xl border border-gray-700 bg-gray-950">
                         <button
                           aria-label={`${r.name} verringern`}
                           onClick={() => updateRoleCount(id, Math.max(0, c - 1))}
                           disabled={!canDecrease}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-700 text-lg font-bold transition-colors hover:bg-gray-600 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-600 disabled:opacity-50"
+                          className="h-9 bg-gray-800 text-lg font-bold transition-colors hover:bg-gray-700 disabled:cursor-not-allowed disabled:bg-gray-900 disabled:text-gray-700"
                         >−</button>
-                        <span className="w-6 text-center font-bold">{c}</span>
+                        <span className="text-center font-bold">{c}</span>
                         <button
                           aria-label={`${r.name} erhöhen`}
                           onClick={() => updateRoleCount(id, Math.min(max, c + 1))}
                           disabled={!canIncrease}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-700 text-lg font-bold transition-colors hover:bg-gray-600 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-600 disabled:opacity-50"
+                          className="h-9 bg-gray-800 text-lg font-bold transition-colors hover:bg-gray-700 disabled:cursor-not-allowed disabled:bg-gray-900 disabled:text-gray-700"
                         >+</button>
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-          </div>
-        </div>
-      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })}
+      </div>
 
       {roleInfoId && <RoleInfoModal roleId={roleInfoId} onClose={() => setRoleInfoId(null)} />}
     </SetupScreenShell>
