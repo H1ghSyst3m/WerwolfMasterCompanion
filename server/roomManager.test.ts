@@ -203,6 +203,10 @@ describe("RoomManager", () => {
   it("auto-fills villagers when role setup starts", () => {
     const { manager } = createRoomWithPlayers();
 
+    const preLock = latestGmSnapshot(send(manager, "gm", { type: "gm:setPrefs", payload: {} }));
+    expect(preLock.roleCounts.dorfbewohner).toBe(0);
+    expect(roleCountTotal(preLock.roleCounts)).toBe(0);
+
     const snapshot = latestGmSnapshot(send(manager, "gm", { type: "gm:lockLobby" }));
 
     expect(snapshot.roleCounts.dorfbewohner).toBe(5);
@@ -1512,6 +1516,20 @@ describe("RoomManager", () => {
 
     const pool = buildRolePool(autoFillVillagers({ werwolf: 2 }, 5));
     expect(pool.filter(roleId => roleId === "dorfbewohner")).toHaveLength(3);
+
+    const zeroPlayers = autoFillVillagers({}, 0);
+    expect(zeroPlayers.dorfbewohner).toBe(0);
+    expect(nonVillagerRoleTotal(zeroPlayers)).toBe(0);
+    expect(roleCountTotal(zeroPlayers)).toBe(0);
+    expect(buildRolePool(zeroPlayers)).toHaveLength(0);
+
+    const negativePlayers = autoFillVillagers({ werwolf: 2, dorfbewohner: 5 }, -3);
+    expect(negativePlayers).toMatchObject({ werwolf: 2, dorfbewohner: 0 });
+    expect(nonVillagerRoleTotal(negativePlayers)).toBe(2);
+    expect(roleCountTotal(negativePlayers)).toBe(2);
+    const negativePool = buildRolePool(negativePlayers);
+    expect(negativePool.filter(roleId => roleId === "werwolf")).toHaveLength(2);
+    expect(negativePool.filter(roleId => roleId === "dorfbewohner")).toHaveLength(0);
   });
 
   it("builds role pools only from canonical roles and sanitized counts", () => {

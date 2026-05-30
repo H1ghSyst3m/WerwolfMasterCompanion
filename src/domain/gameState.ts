@@ -173,6 +173,11 @@ export function nonVillagerRoleTotal(roleCounts: RoleCounts): number {
   }, 0);
 }
 
+/**
+ * Preserves sanitized non-villager counts and fills dorfbewohner as max(0,
+ * playerCount - nonVillagerTotal). Overflow is allowed here; goToAssignment
+ * enforces roleCountTotal(room.roleCounts) === room.players.length.
+ */
 export function autoFillVillagers(roleCounts: RoleCounts, playerCount: number): RoleCounts {
   const safePlayerCount = Number.isFinite(playerCount) ? Math.max(0, Math.floor(playerCount)) : 0;
   const normalized: RoleCounts = {};
