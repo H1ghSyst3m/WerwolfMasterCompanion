@@ -10,7 +10,7 @@ import {
 } from "../src/domain/gameState";
 import { checkWin, getTeam, getUrwolfTransformTarget } from "../src/logic/gameLogic";
 import { buildNightSteps } from "../src/logic/nightSteps";
-import { ROLES } from "../src/constants/roles";
+import { ROLE_IDS, ROLE_ID_SET, ROLES } from "../src/constants/roles";
 import type { OnlineGmSnapshot, OnlinePlayerSnapshot, OnlineSession } from "../src/online/messages";
 import type { ClientMessage, ServerMessage } from "../src/online/messages";
 import type { Player, RoleCounts, RoleId } from "../src/types";
@@ -1541,12 +1541,14 @@ describe("RoomManager", () => {
       beschuetzer: 1,
       wildeskind: 1,
       verfluchter: 1,
+      blinzelmaedchen: 1,
     } as unknown as RoleCounts;
     const pool = buildRolePool(roleCounts);
     expect(ROLES.beschuetzer).toMatchObject({ team: "village", cat: "special", unique: true });
     expect(ROLES.wildeskind).toMatchObject({ team: "village", cat: "special", unique: true });
     expect(ROLES.verfluchter).toMatchObject({ team: "village", cat: "special", unique: true });
-    expect(pool).toEqual(["werwolf", "nachtgast", "beschuetzer", "wildeskind", "verfluchter"]);
+    expect(ROLES.blinzelmaedchen).toMatchObject({ team: "village", cat: "special", unique: true });
+    expect(pool).toEqual(["werwolf", "nachtgast", "beschuetzer", "wildeskind", "verfluchter", "blinzelmaedchen"]);
     expect(roleCountTotal(roleCounts)).toBe(pool.length);
   });
 
@@ -1558,6 +1560,7 @@ describe("RoomManager", () => {
     expect(isClientMessage({ type: "gm:advanceNightStep", payload: { urwolfTransform: true } })).toBe(true);
     expect(isClientMessage({ type: "gm:advanceNightStep", payload: { nightVictim: 2 } })).toBe(false);
     expect(isClientMessage({ type: "gm:updateRoleCounts", payload: { roleCounts: { werwolf: -1 } } })).toBe(false);
+    expect(isClientMessage({ type: "gm:updateRoleCounts", payload: { roleCounts: { blinzelmaedchen: 1 } } })).toBe(true);
     expect(isClientMessage({ type: "gm:updateNightAction", payload: { nachtgastTarget: 2 } })).toBe(true);
     expect(isClientMessage({ type: "gm:updateNightAction", payload: { nachtgastTarget: -1 } })).toBe(false);
     expect(isClientMessage({ type: "gm:updateNightAction", payload: { beschuetzerTarget: 2 } })).toBe(true);
@@ -1575,6 +1578,7 @@ describe("RoomManager", () => {
       },
     })).toBe(false);
     expect(isClientMessage({ type: "gm:setManualAssign", payload: { manualAssign: { "1": undefined } } })).toBe(true);
+    expect(isClientMessage({ type: "gm:setManualAssign", payload: { manualAssign: { "1": "blinzelmaedchen" } } })).toBe(true);
     expect(isClientMessage({ type: "player:joinRoom", payload: { roomCode: "ABC123", name: "Alex" } })).toBe(true);
   });
 
@@ -1590,5 +1594,199 @@ describe("RoomManager", () => {
 
     expect(checkWin(players)).toBe("village");
     expect(checkWin(players, { getTeamForPlayer: player => player.id === 1 ? "wolf" : "village" })).toBe("wolves");
+  });
+});
+
+describe("blinzelmaedchen role definition", () => {
+  it("has the correct static properties", () => {
+    expect(ROLES.blinzelmaedchen).toMatchObject({
+      name: "Blinzelmädchen",
+      icon: "😉",
+      team: "village",
+      cat: "special",
+      unique: true,
+    });
+  });
+
+  it("has a description that references blinking or peeking behavior", () => {
+    expect(ROLES.blinzelmaedchen.desc).toContain("blinzeln");
+  });
+
+  it("has exactly 3 rules", () => {
+    expect(ROLES.blinzelmaedchen.rules).toHaveLength(3);
+  });
+
+  it("has the expected rule titles in order", () => {
+    const titles = ROLES.blinzelmaedchen.rules.map(rule => rule.title);
+    expect(titles).toEqual(["Nacht", "Vorsicht", "Sieg"]);
+  });
+
+  it("first rule text describes opening eyes during wolf phase", () => {
+    expect(ROLES.blinzelmaedchen.rules[0].text).toContain("Werwölfe");
+  });
+
+  it("second rule warns about being noticed by wolves", () => {
+    expect(ROLES.blinzelmaedchen.rules[1].text).toContain("Werwölfe");
+  });
+
+  it("third rule states the win condition is a village win", () => {
+    expect(ROLES.blinzelmaedchen.rules[2].text).toContain("Dorf");
+  });
+
+  it("is included in ROLE_IDS", () => {
+    expect(ROLE_IDS).toContain("blinzelmaedchen");
+  });
+
+  it("is included in ROLE_ID_SET", () => {
+    expect(ROLE_ID_SET.has("blinzelmaedchen")).toBe(true);
+  });
+});
+
+describe("blinzelmaedchen game behavior", () => {
+  it("getTeam returns village for blinzelmaedchen", () => {
+    expect(getTeam("blinzelmaedchen")).toBe("village");
+  });
+
+  it("buildRolePool excludes blinzelmaedchen when count is zero", () => {
+    const pool = buildRolePool({ werwolf: 1, blinzelmaedchen: 0 } as unknown as RoleCounts);
+    expect(pool.filter(id => id === "blinzelmaedchen")).toHaveLength(0);
+  });
+
+  it("buildRolePool includes exactly one blinzelmaedchen when count is 1", () => {
+    const pool = buildRolePool({ werwolf: 1, blinzelmaedchen: 1 } as unknown as RoleCounts);
+    expect(pool.filter(id => id === "blinzelmaedchen")).toHaveLength(1);
+  });
+
+  it("roleCountTotal counts blinzelmaedchen correctly", () => {
+    const counts = { werwolf: 2, blinzelmaedchen: 1 } as unknown as RoleCounts;
+    expect(roleCountTotal(counts)).toBe(3);
+  });
+
+  it("buildNightSteps does not add any step for blinzelmaedchen", () => {
+    const steps = buildNightSteps({
+      round: 1,
+      urwolfUsed: false,
+      witchHealUsed: false,
+      witchPoisonUsed: false,
+      verfluchterConvertedThisNight: null,
+      hadRole: (r: RoleId) => r === "blinzelmaedchen",
+      aliveWithRole: (r: RoleId) => r === "blinzelmaedchen",
+      amorPick: [],
+    });
+    const stepIds = steps.map(step => step.id);
+    expect(stepIds).not.toContain("blinzelmaedchen");
+  });
+
+  it("buildNightSteps includes only sleep and dawn when only blinzelmaedchen is present", () => {
+    const steps = buildNightSteps({
+      round: 1,
+      urwolfUsed: false,
+      witchHealUsed: false,
+      witchPoisonUsed: false,
+      verfluchterConvertedThisNight: null,
+      hadRole: (r: RoleId) => r === "blinzelmaedchen",
+      aliveWithRole: (r: RoleId) => r === "blinzelmaedchen",
+      amorPick: [],
+    });
+    // wolves step is always added, plus sleep and dawn
+    const stepIds = steps.map(step => step.id);
+    expect(stepIds).toEqual(["sleep", "wolves", "dawn"]);
+  });
+
+  it("assignManualRoles can assign blinzelmaedchen to a player", () => {
+    const players: Player[] = [
+      { id: 1, name: "Blinker", role: null, originalRole: null, alive: true, lover: null },
+      { id: 2, name: "Dorf", role: null, originalRole: null, alive: true, lover: null },
+    ];
+    const result = assignManualRoles(players, { "1": "blinzelmaedchen" });
+    expect(result[0]).toMatchObject({ id: 1, role: "blinzelmaedchen", originalRole: "blinzelmaedchen" });
+    expect(result[1]).toMatchObject({ id: 2, role: null, originalRole: null });
+  });
+
+  it("blinzelmaedchen player survives a night where the wolf attacks a different target", () => {
+    const manager = new RoomManager();
+    const gmMessages = send(manager, "gm", { type: "gm:createRoom" });
+    const gmSession = connected(gmMessages);
+    for (let i = 0; i < 5; i++) {
+      send(manager, `p${i}`, {
+        type: "player:joinRoom",
+        payload: { roomCode: gmSession.roomCode, name: `Spieler ${i + 1}` },
+      });
+    }
+    const players: Player[] = [
+      { id: 1, name: "Wolf", role: "werwolf", originalRole: "werwolf", alive: true, lover: null },
+      { id: 2, name: "Blinzelmädchen", role: "blinzelmaedchen", originalRole: "blinzelmaedchen", alive: true, lover: null },
+      { id: 3, name: "Opfer", role: "dorfbewohner", originalRole: "dorfbewohner", alive: true, lover: null },
+      { id: 4, name: "Dorf 1", role: "dorfbewohner", originalRole: "dorfbewohner", alive: true, lover: null },
+      { id: 5, name: "Dorf 2", role: "dorfbewohner", originalRole: "dorfbewohner", alive: true, lover: null },
+    ];
+    send(manager, "gm", { type: "gm:setPlayers", payload: { players } });
+
+    // Advance past sleep to wolves, set wolf victim to player 3 (not blinzelmaedchen)
+    send(manager, "gm", { type: "gm:advanceNightStep" });
+    send(manager, "gm", { type: "gm:updateNightAction", payload: { nightVictim: 3 } });
+    const snapshot = latestGmSnapshot(send(manager, "gm", { type: "gm:resolveNight" }));
+
+    const blinzer = snapshot.players.find(p => p.id === 2);
+    expect(blinzer?.alive).toBe(true);
+    expect(blinzer?.role).toBe("blinzelmaedchen");
+    expect(snapshot.dayDeaths.map(p => p.id)).not.toContain(2);
+  });
+
+  it("blinzelmaedchen is killed when the wolf targets them directly", () => {
+    const manager = new RoomManager();
+    const gmMessages = send(manager, "gm", { type: "gm:createRoom" });
+    const gmSession = connected(gmMessages);
+    for (let i = 0; i < 5; i++) {
+      send(manager, `p${i}`, {
+        type: "player:joinRoom",
+        payload: { roomCode: gmSession.roomCode, name: `Spieler ${i + 1}` },
+      });
+    }
+    const players: Player[] = [
+      { id: 1, name: "Wolf", role: "werwolf", originalRole: "werwolf", alive: true, lover: null },
+      { id: 2, name: "Blinzelmädchen", role: "blinzelmaedchen", originalRole: "blinzelmaedchen", alive: true, lover: null },
+      { id: 3, name: "Dorf 1", role: "dorfbewohner", originalRole: "dorfbewohner", alive: true, lover: null },
+      { id: 4, name: "Dorf 2", role: "dorfbewohner", originalRole: "dorfbewohner", alive: true, lover: null },
+      { id: 5, name: "Dorf 3", role: "dorfbewohner", originalRole: "dorfbewohner", alive: true, lover: null },
+    ];
+    send(manager, "gm", { type: "gm:setPlayers", payload: { players } });
+
+    // Wolf attacks blinzelmaedchen directly
+    send(manager, "gm", { type: "gm:advanceNightStep" });
+    send(manager, "gm", { type: "gm:updateNightAction", payload: { nightVictim: 2 } });
+    const snapshot = latestGmSnapshot(send(manager, "gm", { type: "gm:resolveNight" }));
+
+    const blinzer = snapshot.players.find(p => p.id === 2);
+    expect(blinzer?.alive).toBe(false);
+    expect(snapshot.dayDeaths.map(p => p.id)).toContain(2);
+  });
+
+  it("blinzelmaedchen does not trigger any special state field when killed", () => {
+    const manager = new RoomManager();
+    const gmMessages = send(manager, "gm", { type: "gm:createRoom" });
+    const gmSession = connected(gmMessages);
+    for (let i = 0; i < 5; i++) {
+      send(manager, `p${i}`, {
+        type: "player:joinRoom",
+        payload: { roomCode: gmSession.roomCode, name: `Spieler ${i + 1}` },
+      });
+    }
+    const players: Player[] = [
+      { id: 1, name: "Wolf", role: "werwolf", originalRole: "werwolf", alive: true, lover: null },
+      { id: 2, name: "Blinzelmädchen", role: "blinzelmaedchen", originalRole: "blinzelmaedchen", alive: true, lover: null },
+      { id: 3, name: "Dorf 1", role: "dorfbewohner", originalRole: "dorfbewohner", alive: true, lover: null },
+      { id: 4, name: "Dorf 2", role: "dorfbewohner", originalRole: "dorfbewohner", alive: true, lover: null },
+      { id: 5, name: "Dorf 3", role: "dorfbewohner", originalRole: "dorfbewohner", alive: true, lover: null },
+    ];
+    send(manager, "gm", { type: "gm:setPlayers", payload: { players } });
+
+    send(manager, "gm", { type: "gm:advanceNightStep" });
+    send(manager, "gm", { type: "gm:updateNightAction", payload: { nightVictim: 2 } });
+    const snapshot = latestGmSnapshot(send(manager, "gm", { type: "gm:resolveNight" }));
+
+    // No role-specific state fields should be set for blinzelmaedchen
+    expect(snapshot.verfluchterConvertedThisNight).toBeNull();
+    expect(snapshot.harterBurscheWoundedThisNight).toBeNull();
   });
 });
