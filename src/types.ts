@@ -15,6 +15,7 @@ export type RoleId =
   | "beschuetzer"
   | "wildeskind"
   | "verfluchter"
+  | "blinzelmaedchen"
   | "harterbursche";
 
 // Role definition

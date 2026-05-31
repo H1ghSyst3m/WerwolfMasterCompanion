@@ -1541,12 +1541,14 @@ describe("RoomManager", () => {
       beschuetzer: 1,
       wildeskind: 1,
       verfluchter: 1,
+      blinzelmaedchen: 1,
     } as unknown as RoleCounts;
     const pool = buildRolePool(roleCounts);
     expect(ROLES.beschuetzer).toMatchObject({ team: "village", cat: "special", unique: true });
     expect(ROLES.wildeskind).toMatchObject({ team: "village", cat: "special", unique: true });
     expect(ROLES.verfluchter).toMatchObject({ team: "village", cat: "special", unique: true });
-    expect(pool).toEqual(["werwolf", "nachtgast", "beschuetzer", "wildeskind", "verfluchter"]);
+    expect(ROLES.blinzelmaedchen).toMatchObject({ team: "village", cat: "special", unique: true });
+    expect(pool).toEqual(["werwolf", "nachtgast", "beschuetzer", "wildeskind", "verfluchter", "blinzelmaedchen"]);
     expect(roleCountTotal(roleCounts)).toBe(pool.length);
   });
 
@@ -1558,6 +1560,7 @@ describe("RoomManager", () => {
     expect(isClientMessage({ type: "gm:advanceNightStep", payload: { urwolfTransform: true } })).toBe(true);
     expect(isClientMessage({ type: "gm:advanceNightStep", payload: { nightVictim: 2 } })).toBe(false);
     expect(isClientMessage({ type: "gm:updateRoleCounts", payload: { roleCounts: { werwolf: -1 } } })).toBe(false);
+    expect(isClientMessage({ type: "gm:updateRoleCounts", payload: { roleCounts: { blinzelmaedchen: 1 } } })).toBe(true);
     expect(isClientMessage({ type: "gm:updateNightAction", payload: { nachtgastTarget: 2 } })).toBe(true);
     expect(isClientMessage({ type: "gm:updateNightAction", payload: { nachtgastTarget: -1 } })).toBe(false);
     expect(isClientMessage({ type: "gm:updateNightAction", payload: { beschuetzerTarget: 2 } })).toBe(true);
@@ -1575,6 +1578,7 @@ describe("RoomManager", () => {
       },
     })).toBe(false);
     expect(isClientMessage({ type: "gm:setManualAssign", payload: { manualAssign: { "1": undefined } } })).toBe(true);
+    expect(isClientMessage({ type: "gm:setManualAssign", payload: { manualAssign: { "1": "blinzelmaedchen" } } })).toBe(true);
     expect(isClientMessage({ type: "player:joinRoom", payload: { roomCode: "ABC123", name: "Alex" } })).toBe(true);
   });
 

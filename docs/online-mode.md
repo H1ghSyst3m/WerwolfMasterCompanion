@@ -217,6 +217,14 @@ Verfluchter conversion is owned by the server:
 - Player snapshots still do not include logs. The converted player sees the updated private role card as `Werwolf (ehem. Verfluchter)`.
 - Reset to lobby and new nights clear `verfluchterConvertedThisNight` with the rest of per-night state.
 
+## Blinzelmädchen Online Behavior
+
+Blinzelmädchen has no server-owned action:
+
+- It is assigned, revealed, saved in snapshots, and reset like any normal role.
+- The player-facing role text describes the table behavior; no websocket command or room state field is used for blinking.
+- Player snapshots expose it only as that player's own private role, following normal role visibility rules.
+
 ## Harter Bursche Online Behavior
 
 Harter Bursche wounds are server-owned in Online Mode:

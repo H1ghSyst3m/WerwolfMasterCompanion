@@ -249,6 +249,12 @@ If a role is dead or exhausted, the step still appears to preserve rhythm but sh
 - Non-wolf deaths still kill Verfluchter normally through `killPlayer()`.
 - If Beschützer protected Verfluchter, the wolf attack is prevented and no conversion happens.
 
+### Blinzelmädchen
+
+- Blinzelmädchen starts village-aligned and has no app-handled night action.
+- The player may blink or peek at the table while wolves are awake, according to the group's table rule.
+- The night flow does not add a separate step, state field, target selection, or automatic death effect for this role.
+
 ### Harter Bursche
 
 - Harter Bursche starts village-aligned and has no active night action.

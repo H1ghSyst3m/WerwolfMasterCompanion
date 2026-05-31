@@ -353,6 +353,28 @@ export const ROLES: Record<RoleId, Role> = {
       },
     ],
   },
+  blinzelmaedchen: {
+    name: "Blinzelmädchen",
+    icon: "😉",
+    team: "village",
+    cat: "special",
+    unique: true,
+    desc: "Du spielst für das Dorf. Während die Werwölfe wach sind, darfst du heimlich blinzeln und versuchen, sie zu erkennen, ohne dich zu verraten.",
+    rules: [
+      {
+        title: "Nacht",
+        text: "Wenn die Werwölfe erwachen, darfst du die Augen einen Spalt öffnen und vorsichtig beobachten, wer sich als Werwolf zeigt.",
+      },
+      {
+        title: "Vorsicht",
+        text: "Blinzle nur unauffällig. Wenn die Werwölfe dich bemerken, können sie nach eurer Tischregel gegen dich vorgehen.",
+      },
+      {
+        title: "Sieg",
+        text: "Du gewinnst mit dem Dorf, wenn alle Werwölfe ausgeschaltet sind.",
+      },
+    ],
+  },
   harterbursche: {
     name: "Harter Bursche",
     icon: "💪",

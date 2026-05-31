@@ -163,6 +163,12 @@ interface Role {
 - **Beschützer interaction:** If Verfluchter is protected, the wolf attack is prevented and no conversion happens.
 - **Other deaths:** Day vote, Witch poison, Hunter shot, lover chain, and other non-wolf effects kill Verfluchter normally.
 
+### 😉 Blinzelmädchen (*unique*)
+- **Team:** Village
+- **Night:** May secretly blink or peek while the wolves are awake at the table.
+- **Risk:** If the wolves notice the Blinzelmädchen watching them, the group handles the consequence by table rule.
+- **In-app behavior:** No active night step, stored state, automatic kill, or target selection.
+
 ### 💪 Harter Bursche (*unique*)
 - **Team:** Village
 - **Night:** No active night action.
@@ -184,7 +190,8 @@ interface Role {
 type RoleId =
   | "werwolf" | "dorfbewohner" | "seher" | "hexe" | "jaeger"
   | "amor" | "narr" | "dorftrottel" | "auraseher" | "detektiv" | "urwolf"
-  | "nachtgast" | "beschuetzer" | "wildeskind" | "verfluchter" | "harterbursche";
+  | "nachtgast" | "beschuetzer" | "wildeskind" | "verfluchter" | "blinzelmaedchen"
+  | "harterbursche";
 ```
 
 ---
@@ -208,4 +215,5 @@ type RoleId =
 | narr | No night step |
 | dorftrottel | No night step |
 | verfluchter | No active night step; GM notification appears only when `verfluchterConvertedThisNight !== null` |
+| blinzelmaedchen | No night step |
 | harterbursche | No active night step; GM notification appears only when `harterBurscheWoundedThisNight !== null` |
