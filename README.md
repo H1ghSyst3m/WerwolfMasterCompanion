@@ -65,6 +65,7 @@ Online Mode needs the included Node WebSocket server. Rooms are stored in memory
 - Beschützer
 - Wildes Kind
 - Verfluchter
+- Blinzelmädchen
 - Harter Bursche
 
 Role details and edge cases are documented in [docs/roles.md](docs/roles.md).
