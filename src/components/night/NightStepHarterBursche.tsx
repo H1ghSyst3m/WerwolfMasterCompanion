@@ -24,7 +24,7 @@ export function NightStepHarterBursche({
           Tippe die Person leise an. Sie spielt den nächsten Tag noch mit und stirbt beim darauffolgenden Tagesanbruch an ihren Wunden.
         </p>
       </div>
-      <Btn onClick={advanceNightStep} cls="bg-purple-600 hover:bg-purple-500 text-white w-full" size="lg">
+      <Btn onClick={() => advanceNightStep()} cls="bg-purple-600 hover:bg-purple-500 text-white w-full" size="lg">
         Weiter →
       </Btn>
     </div>

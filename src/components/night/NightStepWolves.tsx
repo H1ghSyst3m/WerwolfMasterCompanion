@@ -32,7 +32,7 @@ export function NightStepWolves({ alive, nightVictim, setNightVictim, advanceNig
         </div>
       )}
       <Btn
-        onClick={advanceNightStep}
+        onClick={() => advanceNightStep()}
         cls="bg-red-600 hover:bg-red-500 text-white w-full"
         size="lg"
         disabled={filteredCandidates.length > 0 && nightVictim == null}

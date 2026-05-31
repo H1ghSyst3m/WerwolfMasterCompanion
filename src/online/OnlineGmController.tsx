@@ -165,6 +165,17 @@ export function OnlineGmController({ snapshot, sendCommand }: OnlineGmController
     [sendCommand],
   );
 
+  const advanceNightStep = useCallback(
+    (urwolfTransform?: unknown) => {
+      if (urwolfTransform === true || urwolfTransform === false || urwolfTransform === null) {
+        sendCommand({ type: "gm:advanceNightStep", payload: { urwolfTransform } });
+        return;
+      }
+      sendCommand({ type: "gm:advanceNightStep" });
+    },
+    [sendCommand],
+  );
+
   const setRoleCounts: Dispatch<SetStateAction<RoleCounts>> = useCallback(
     value => sendCommand({ type: "gm:updateRoleCounts", payload: { roleCounts: resolveDraftValue("roleCounts", value) } }),
     [sendCommand, resolveDraftValue],
@@ -200,7 +211,7 @@ export function OnlineGmController({ snapshot, sendCommand }: OnlineGmController
 
   const setupHeaderAction = (
     <div className="flex items-center gap-2">
-      <RulesButton label="📖" />
+      <RulesButton />
       {cancelGameButton}
     </div>
   );
@@ -339,7 +350,7 @@ export function OnlineGmController({ snapshot, sendCommand }: OnlineGmController
             <span className="text-gray-400 text-sm ml-2">{isNight ? "Nacht" : "Tag"} · {snapshot.roomCode}</span>
           </div>
           <div className="flex gap-2">
-            <RulesButton label="📖" cls="px-3 py-1.5 border-gray-800" />
+            <RulesButton cls="px-3 py-1.5 border-gray-800" />
             {cancelGameButton}
             <button aria-label="Spieler anzeigen" onClick={() => setShowPlayers(true)} className="px-3 py-1.5 bg-gray-800 rounded-lg text-sm">👥</button>
             <button aria-label="Spielprotokoll anzeigen" onClick={() => setShowLog(true)} className="px-3 py-1.5 bg-gray-800 rounded-lg text-sm">📜</button>
@@ -381,11 +392,7 @@ export function OnlineGmController({ snapshot, sendCommand }: OnlineGmController
           <NightPhase
             nightSteps={nightSteps}
             nightStepIdx={snapshot.nightStepIdx}
-            advanceNightStep={urwolfTransform =>
-              sendCommand(urwolfTransform === undefined
-                ? { type: "gm:advanceNightStep" }
-                : { type: "gm:advanceNightStep", payload: { urwolfTransform } })
-            }
+            advanceNightStep={advanceNightStep}
             resolveNight={() => sendCommand({ type: "gm:resolveNight" })}
             players={players}
             alive={alive}

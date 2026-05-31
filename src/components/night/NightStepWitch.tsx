@@ -66,7 +66,7 @@ export function NightStepWitch({
           </div>
         </div>
       )}
-      <Btn onClick={advanceNightStep} cls="bg-purple-600 hover:bg-purple-500 text-white w-full" size="lg">
+      <Btn onClick={() => advanceNightStep()} cls="bg-purple-600 hover:bg-purple-500 text-white w-full" size="lg">
         Weiter →
       </Btn>
     </div>

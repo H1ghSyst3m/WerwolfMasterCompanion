@@ -60,7 +60,7 @@ export function OnlinePlayerView({ snapshot, onRevealDone, onLeave }: OnlinePlay
     <div className="h-full overflow-y-auto bg-gradient-to-b from-indigo-950 to-gray-950 text-white">
       <div className="min-h-full max-w-md mx-auto px-4 py-6 flex flex-col">
         <header className="flex justify-end gap-2 mb-4">
-          <RulesButton label="📖" cls="h-10" />
+          <RulesButton cls="h-10" />
           {canOpenRole && (
             <button
               onClick={() => {

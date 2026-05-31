@@ -619,7 +619,7 @@ function LocalGame() {
           gs.setSetupStep(2);
         }}
         clearPlayers={() => gs.setPlayers([])}
-        headerAction={<RulesButton label="📖" />}
+        headerAction={<RulesButton />}
       />
     );
     if (gs.setupStep === 2) return (
@@ -629,7 +629,7 @@ function LocalGame() {
         winMode={winMode} setWinMode={setWinMode}
         revealMode={revealMode} setRevealMode={setRevealMode}
         roleReveal={roleReveal} setRoleReveal={setRoleReveal}
-        headerAction={<RulesButton label="📖" />}
+        headerAction={<RulesButton />}
         onBack={() => gs.setSetupStep(1)}
         onNext={() => {
           setRoleCounts(prev => autoFillVillagers(prev, gs.players.length));
@@ -644,7 +644,7 @@ function LocalGame() {
         players={gs.players} roleCounts={roleCounts} assignMode={assignMode}
         manualAssign={manualAssign} setAssignMode={setAssignMode} setManualAssign={setManualAssign}
         setPlayers={gs.setPlayers} shuffleRoles={shuffleRoles} startGame={startGame}
-        headerAction={<RulesButton label="📖" />}
+        headerAction={<RulesButton />}
         onBack={() => gs.setSetupStep(2)}
       />
     );
@@ -675,7 +675,7 @@ function LocalGame() {
             <span className="text-gray-400 text-sm ml-2">{isNight ? "Nacht" : "Tag"}</span>
           </div>
           <div className="flex gap-2">
-            <RulesButton label="📖" cls="px-3 py-1.5 border-gray-800" />
+            <RulesButton cls="px-3 py-1.5 border-gray-800" />
             <button aria-label="Spieler anzeigen" onClick={() => setShowPlayers(true)} className="px-3 py-1.5 bg-gray-800 rounded-lg text-sm">👥</button>
             <button aria-label="Spielprotokoll anzeigen" onClick={() => setShowLog(true)} className="px-3 py-1.5 bg-gray-800 rounded-lg text-sm">📜</button>
           </div>

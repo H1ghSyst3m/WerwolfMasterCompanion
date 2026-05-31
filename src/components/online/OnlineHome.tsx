@@ -31,7 +31,7 @@ export function OnlineHome({ online, initialRoomCode = "", onBack }: OnlineHomeP
         <header className="flex items-center justify-between mb-6">
           <button onClick={onBack} className="text-gray-400 hover:text-white px-2 py-1">← Zurück</button>
           <div className="flex items-center gap-2">
-            <RulesButton label="📖" />
+            <RulesButton />
             <span className={`text-xs px-2 py-1 rounded-full ${online.status === "open" ? "bg-green-900/50 text-green-300" : "bg-gray-800 text-gray-400"}`}>
               {statusText}
             </span>
