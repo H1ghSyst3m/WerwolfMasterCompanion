@@ -27,7 +27,7 @@ export function NightStepVerfluchter({
           Tippe die Person leise an. Ab der nächsten Werwolfphase wacht sie mit den Werwölfen auf.
         </p>
       </div>
-      <Btn onClick={advanceNightStep} cls="bg-red-700 hover:bg-red-600 text-white w-full" size="lg">
+      <Btn onClick={() => advanceNightStep()} cls="bg-red-700 hover:bg-red-600 text-white w-full" size="lg">
         Informiert →
       </Btn>
     </div>

@@ -1,5 +1,6 @@
 import { getRoleDisplay } from "../domain/roleDisplay";
 import { Btn } from "./ui/Btn";
+import { RulesButton } from "./ui/RulesButton";
 import type { Player, LogEntry, WinReason } from "../types";
 
 const WIN_DATA: Record<WinReason, { icon: string; title: string; color: string; bg: string }> = {
@@ -25,6 +26,10 @@ export function GameOver({ winner, round, players, log, onReset, resetLabel = "ð
   return (
     <div className={`h-full overflow-y-auto bg-gradient-to-b ${w.bg} to-gray-950 text-white`}>
       <div className="p-4 max-w-md mx-auto">
+        <div className="flex justify-end pt-2">
+          <RulesButton />
+        </div>
+
         <div className="text-center pt-12 mb-8">
           <div className="text-7xl mb-4">{w.icon}</div>
           <h1 className={`text-3xl font-bold ${w.color}`}>{w.title}</h1>
