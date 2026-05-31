@@ -11,15 +11,54 @@ const CATEGORY_LABELS = {
   special: "Spezial",
 } as const;
 
+const FOCUSABLE_SELECTOR = [
+  "a[href]",
+  "button:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  "summary",
+  "[tabindex]:not([tabindex='-1'])",
+].join(",");
+
 function getTeamLabel(team: "wolf" | "village"): string {
   return team === "wolf" ? "🐺 Böse" : "🏘️ Gut";
 }
 
+function getFocusableElements(container: HTMLElement): HTMLElement[] {
+  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
+    .filter(element => {
+      if (element.tabIndex < 0) return false;
+      if (element.getAttribute("aria-hidden") === "true") return false;
+      const style = window.getComputedStyle(element);
+      return style.display !== "none" && style.visibility !== "hidden" && element.getClientRects().length > 0;
+    });
+}
+
 export function RoleRulesModal({ onClose }: RoleRulesModalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    containerRef.current?.focus();
+    previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    closeButtonRef.current?.focus();
+
+    const handleFocusIn = (event: FocusEvent) => {
+      const container = containerRef.current;
+      if (!container) return;
+      if (event.target instanceof Node && container.contains(event.target)) return;
+      (getFocusableElements(container)[0] ?? container).focus();
+    };
+
+    document.addEventListener("focusin", handleFocusIn);
+
+    return () => {
+      document.removeEventListener("focusin", handleFocusIn);
+      if (previousFocusRef.current?.isConnected) {
+        previousFocusRef.current.focus();
+      }
+    };
   }, []);
 
   return (
@@ -35,6 +74,36 @@ export function RoleRulesModal({ onClose }: RoleRulesModalProps) {
           if (event.key === "Escape") {
             event.stopPropagation();
             onClose();
+            return;
+          }
+
+          if (event.key === "Tab") {
+            const focusableElements = getFocusableElements(event.currentTarget);
+            const firstElement = focusableElements[0];
+            const lastElement = focusableElements[focusableElements.length - 1];
+
+            if (!firstElement || !lastElement) {
+              event.preventDefault();
+              event.currentTarget.focus();
+              return;
+            }
+
+            if (!(document.activeElement instanceof Node) || !event.currentTarget.contains(document.activeElement)) {
+              event.preventDefault();
+              firstElement.focus();
+              return;
+            }
+
+            if (event.shiftKey && document.activeElement === firstElement) {
+              event.preventDefault();
+              lastElement.focus();
+              return;
+            }
+
+            if (!event.shiftKey && document.activeElement === lastElement) {
+              event.preventDefault();
+              firstElement.focus();
+            }
           }
         }}
         className="h-full max-w-md mx-auto bg-gray-950 flex flex-col outline-none"
@@ -46,6 +115,7 @@ export function RoleRulesModal({ onClose }: RoleRulesModalProps) {
               <p className="text-gray-400 text-xs mt-1">Kurzbeschreibung und genaue App-Regeln</p>
             </div>
             <button
+              ref={closeButtonRef}
               type="button"
               onClick={onClose}
               aria-label="Regeln schließen"
