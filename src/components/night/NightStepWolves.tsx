@@ -24,7 +24,8 @@ export function NightStepWolves({
   if (wolvesSkipNextNight) {
     return (
       <div className="space-y-3">
-        <div className="rounded-xl border border-red-900/70 bg-red-950/30 p-4 text-sm text-red-100">
+        <p className="text-sm text-gray-400">Wen fressen die Werwölfe?</p>
+        <div className="rounded-xl border border-gray-800 bg-gray-900 p-4 text-sm text-gray-300">
           Die Werwölfe sind geschwächt und wählen diese Nacht kein Opfer.
         </div>
         <Btn
@@ -32,7 +33,7 @@ export function NightStepWolves({
           cls="bg-red-600 hover:bg-red-500 text-white w-full"
           size="lg"
         >
-          Weiter: kein Opfer →
+          Weiter: keine gültigen Opfer
         </Btn>
       </div>
     );
