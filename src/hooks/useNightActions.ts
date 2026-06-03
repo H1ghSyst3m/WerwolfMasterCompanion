@@ -16,6 +16,8 @@ export interface NightActionsHook {
   setWildesKindVorbild: Dispatch<SetStateAction<number | null>>;
   verfluchterConvertedThisNight: number | null;
   setVerfluchterConvertedThisNight: Dispatch<SetStateAction<number | null>>;
+  wolvesSkipNextNight: boolean;
+  setWolvesSkipNextNight: Dispatch<SetStateAction<boolean>>;
   harterBurscheWounded: number | null;
   setHarterBurscheWounded: Dispatch<SetStateAction<number | null>>;
   harterBurscheWoundedThisNight: number | null;
@@ -59,6 +61,7 @@ export function useNightActions(): NightActionsHook {
   const [beschuetzerLastTarget, setBeschuetzerLastTarget] = useState<number | null>(null);
   const [wildesKindVorbild, setWildesKindVorbild] = useState<number | null>(null);
   const [verfluchterConvertedThisNight, setVerfluchterConvertedThisNight] = useState<number | null>(null);
+  const [wolvesSkipNextNight, setWolvesSkipNextNight] = useState(false);
   const [harterBurscheWounded, setHarterBurscheWounded] = useState<number | null>(null);
   const [harterBurscheWoundedThisNight, setHarterBurscheWoundedThisNight] = useState<number | null>(null);
   const [urwolfTransform, setUrwolfTransform] = useState<boolean | null>(null);
@@ -103,6 +106,7 @@ export function useNightActions(): NightActionsHook {
     beschuetzerLastTarget, setBeschuetzerLastTarget,
     wildesKindVorbild, setWildesKindVorbild,
     verfluchterConvertedThisNight, setVerfluchterConvertedThisNight,
+    wolvesSkipNextNight, setWolvesSkipNextNight,
     harterBurscheWounded, setHarterBurscheWounded,
     harterBurscheWoundedThisNight, setHarterBurscheWoundedThisNight,
     urwolfTransform, setUrwolfTransform,

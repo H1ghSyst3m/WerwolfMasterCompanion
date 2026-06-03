@@ -15,6 +15,7 @@ export type RoleId =
   | "beschuetzer"
   | "wildeskind"
   | "verfluchter"
+  | "verseuchter"
   | "blinzelmaedchen"
   | "harterbursche";
 
@@ -163,6 +164,7 @@ export interface SaveState {
   beschuetzerLastTarget: number | null;
   wildesKindVorbild: number | null;
   verfluchterConvertedThisNight: number | null;
+  wolvesSkipNextNight: boolean;
   harterBurscheWounded: number | null;
   harterBurscheWoundedThisNight: number | null;
   urwolfTransform: boolean | null;

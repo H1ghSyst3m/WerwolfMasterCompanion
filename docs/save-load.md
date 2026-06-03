@@ -89,6 +89,7 @@ interface SaveState {
   beschuetzerLastTarget: number | null;
   wildesKindVorbild: number | null;
   verfluchterConvertedThisNight: number | null;
+  wolvesSkipNextNight: boolean;
   harterBurscheWounded: number | null;
   harterBurscheWoundedThisNight: number | null;
   urwolfTransform: boolean | null;
@@ -149,6 +150,7 @@ Key points:
 - Saves are debounced by 500ms to batch rapid state changes.
 - The snapshot includes setup fields (`roleCounts`, `assignMode`, etc.) as context captured at game start.
 - `wildesKindVorbild` is game-wide role state: it survives normal night resets and restores to `null` for older schema-2 saves that do not contain the field.
+- `wolvesSkipNextNight` is pending Verseuchter state: it survives normal night resets until consumed and restores to `false` for older schema-2 saves that do not contain the field.
 
 ---
 

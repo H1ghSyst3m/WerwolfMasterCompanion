@@ -82,7 +82,8 @@ Night Phase                                      │
     ├── Night Steps (see below)                  │
     ├── resolveNight()                           │
     │       ├── Apply Beschützer / wolf kill /   │
-    │       │   Verfluchter / Urwolf             │
+    │       │   Verfluchter / Verseuchter /      │
+    │       │   Urwolf                           │
     │       ├── Apply witch poison               │
     │       └── Set dayDeaths, trigger queue     │
     ├── [Hunter trigger if applicable]           │
@@ -181,7 +182,7 @@ Night steps are built dynamically each round by `buildNightSteps()` in `src/logi
 | 4 | `wildeskind` | `hadRole("wildeskind") && round === 1` |
 | 5 | `nachtgast` | `hadRole("nachtgast")` |
 | 6 | `beschuetzer` | `hadRole("beschuetzer")` |
-| 7 | `wolves` | Always |
+| 7 | `wolves` | Always; if `wolvesSkipNextNight` is true, no victim is selected |
 | 8 | `verfluchter` | `verfluchterConvertedThisNight !== null` |
 | 9 | `urwolf` | `hadRole("urwolf")` |
 | 10 | `urwolfinfo` | Successful Urwolf transform target exists |
@@ -209,6 +210,7 @@ If a role is dead or exhausted, the step still appears to preserve rhythm but sh
 - `originalRole` remains the victim's starting role so the game-over screen can show the original/current role difference.
 - If the wolf victim was Verfluchter, conversion happens when advancing out of `wolves`, before Urwolf and seer-style steps. The Urwolf step still appears if the Urwolf exists and is unused, but it is blocked for that target and the ability remains available.
 - If Beschützer protected the wolf victim, the attack is prevented before Urwolf can transform the target. The Urwolf step is blocked and the ability remains available.
+- If `wolvesSkipNextNight` is active because the wolves killed Verseuchter in the previous night, the wolves step shows a GM/wolf-only skip message and no victim can be selected. The Urwolf step still appears, but has no victim to transform.
 
 ### Nachtgast
 
@@ -248,6 +250,15 @@ If a role is dead or exhausted, the step still appears to preserve rhythm but sh
 - Exact-role displays use `getRoleDisplay()` so converted players show as `Werwolf (ehem. Verfluchter)`.
 - Non-wolf deaths still kill Verfluchter normally through `killPlayer()`.
 - If Beschützer protected Verfluchter, the wolf attack is prevented and no conversion happens.
+
+### Verseuchter
+
+- Verseuchter starts village-aligned and has no active night action.
+- If wolves directly attack and actually kill Verseuchter as their main victim, `wolvesSkipNextNight` is set to `true`.
+- The effect is secret: Local Mode records it in the GM log; Online Mode sends the log only in GM snapshots. Player snapshots do not expose `wolvesSkipNextNight`.
+- In the next night, the `wolves` step tells the GM/wolves that the wolves are weakened and choose no victim. The skip is consumed when the wolves step is left or when `resolveNight()` is called directly.
+- In the skip night, Urwolf still gets the normal step, but without a wolf victim the transform action is unavailable.
+- Beschützer protection, Witch heal, Nachtgast causing a missed direct attack, Urwolf transformation, Verfluchter conversion, and non-wolf deaths do not trigger the skip.
 
 ### Blinzelmädchen
 

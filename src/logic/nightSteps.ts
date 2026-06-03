@@ -6,6 +6,7 @@ export interface BuildNightStepsParams {
   witchHealUsed: boolean;
   witchPoisonUsed: boolean;
   verfluchterConvertedThisNight: number | null;
+  wolvesSkipNextNight?: boolean;
   urwolfTransformTarget?: number | null;
   harterBurscheWoundedThisNight?: number | null;
   hadRole: (r: RoleId) => boolean;
@@ -19,6 +20,7 @@ export function buildNightSteps({
   witchHealUsed,
   witchPoisonUsed,
   verfluchterConvertedThisNight,
+  wolvesSkipNextNight = false,
   urwolfTransformTarget = null,
   harterBurscheWoundedThisNight = null,
   hadRole,
@@ -80,7 +82,9 @@ export function buildNightSteps({
     id: "wolves",
     title: "Werwölfe erwachen",
     icon: "🐺",
-    desc: "Werwölfe einigen sich auf ein Opfer.",
+    desc: wolvesSkipNextNight
+      ? "Die Werwölfe sind geschwächt und wählen diese Nacht kein Opfer."
+      : "Werwölfe einigen sich auf ein Opfer.",
     active: true,
   });
 
@@ -102,7 +106,7 @@ export function buildNightSteps({
       desc: "Urwolf entscheidet: Soll das Opfer verwandelt statt getötet werden? (einmalig)",
       active: aliveWithRole("urwolf") && !urwolfUsed,
     });
-    if (urwolfTransformTarget !== null) {
+    if (!wolvesSkipNextNight && urwolfTransformTarget !== null) {
       steps.push({
         id: "urwolfinfo",
         title: "Verwandelten informieren",

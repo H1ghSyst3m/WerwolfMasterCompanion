@@ -22,6 +22,7 @@ export interface NightActionState {
   beschuetzerLastTarget: number | null;
   wildesKindVorbild: number | null;
   verfluchterConvertedThisNight: number | null;
+  wolvesSkipNextNight: boolean;
   harterBurscheWounded: number | null;
   harterBurscheWoundedThisNight: number | null;
   urwolfTransform: boolean | null;
@@ -76,6 +77,7 @@ export function createInitialNightActions(): NightActionState {
     beschuetzerLastTarget: null,
     wildesKindVorbild: null,
     verfluchterConvertedThisNight: null,
+    wolvesSkipNextNight: false,
     harterBurscheWounded: null,
     harterBurscheWoundedThisNight: null,
     urwolfTransform: null,
@@ -100,6 +102,7 @@ export function resetNightActions(current: NightActionState): NightActionState {
     ...createInitialNightActions(),
     beschuetzerLastTarget: current.beschuetzerLastTarget,
     wildesKindVorbild: current.wildesKindVorbild,
+    wolvesSkipNextNight: current.wolvesSkipNextNight,
     harterBurscheWounded: current.harterBurscheWounded,
     urwolfUsed: current.urwolfUsed,
     witchHealUsed: current.witchHealUsed,

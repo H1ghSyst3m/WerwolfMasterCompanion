@@ -42,6 +42,7 @@ Online Mode needs the included Node WebSocket server. Rooms are stored in memory
 - Night actions for wolves, seer-style roles, witch, Amor, Wildes Kind, Urwolf, Nachtgast, and Beschützer.
 - Hunter death triggers, including chained deaths.
 - Lovers and heartbreak deaths.
+- Verseuchter wolf-skip effect after a true wolf kill.
 - Special wins for Narr, Dorftrottel, and lovers.
 - Local browser save and restore.
 - Online rooms with player reconnect tokens.
@@ -65,6 +66,7 @@ Online Mode needs the included Node WebSocket server. Rooms are stored in memory
 - Beschützer
 - Wildes Kind
 - Verfluchter
+- Verseuchter
 - Blinzelmädchen
 - Harter Bursche
 

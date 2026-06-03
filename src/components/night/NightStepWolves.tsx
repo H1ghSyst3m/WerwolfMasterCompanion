@@ -8,10 +8,35 @@ interface NightStepWolvesProps {
   setNightVictim: (id: number) => void;
   advanceNightStep: () => void;
   getEffectiveTeam: (playerId: number) => "wolf" | "village";
+  wolvesSkipNextNight: boolean;
 }
 
-export function NightStepWolves({ alive, nightVictim, setNightVictim, advanceNightStep, getEffectiveTeam }: NightStepWolvesProps) {
+export function NightStepWolves({
+  alive,
+  nightVictim,
+  setNightVictim,
+  advanceNightStep,
+  getEffectiveTeam,
+  wolvesSkipNextNight,
+}: NightStepWolvesProps) {
   const filteredCandidates = alive.filter(player => getEffectiveTeam(player.id) !== "wolf");
+
+  if (wolvesSkipNextNight) {
+    return (
+      <div className="space-y-3">
+        <div className="rounded-xl border border-red-900/70 bg-red-950/30 p-4 text-sm text-red-100">
+          Die Werwölfe sind geschwächt und wählen diese Nacht kein Opfer.
+        </div>
+        <Btn
+          onClick={() => advanceNightStep()}
+          cls="bg-red-600 hover:bg-red-500 text-white w-full"
+          size="lg"
+        >
+          Weiter: kein Opfer →
+        </Btn>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">

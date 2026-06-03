@@ -64,13 +64,15 @@ function LocalGame() {
   const [roleInfoId, setRoleInfoId] = useState<RoleId | null>(null);
 
   const urwolfTransformTarget = useMemo(
-    () => getUrwolfTransformTarget(gs.players, {
-      nightVictim: na.nightVictim,
-      nachtgastTarget: na.nachtgastTarget,
-      beschuetzerTarget: na.beschuetzerTarget,
-      verfluchterConvertedThisNight: na.verfluchterConvertedThisNight,
-      urwolfTransform: na.urwolfTransform,
-    }),
+    () => na.wolvesSkipNextNight
+      ? null
+      : getUrwolfTransformTarget(gs.players, {
+          nightVictim: na.nightVictim,
+          nachtgastTarget: na.nachtgastTarget,
+          beschuetzerTarget: na.beschuetzerTarget,
+          verfluchterConvertedThisNight: na.verfluchterConvertedThisNight,
+          urwolfTransform: na.urwolfTransform,
+        }),
     [
       gs.players,
       na.nightVictim,
@@ -78,6 +80,7 @@ function LocalGame() {
       na.beschuetzerTarget,
       na.verfluchterConvertedThisNight,
       na.urwolfTransform,
+      na.wolvesSkipNextNight,
     ],
   );
   const urwolfTransformTargetId = urwolfTransformTarget?.id ?? null;
@@ -107,6 +110,7 @@ function LocalGame() {
       witchHealUsed: na.witchHealUsed,
       witchPoisonUsed: na.witchPoisonUsed,
       verfluchterConvertedThisNight: na.verfluchterConvertedThisNight,
+      wolvesSkipNextNight: na.wolvesSkipNextNight,
       urwolfTransformTarget: urwolfTransformTargetId,
       harterBurscheWoundedThisNight: na.harterBurscheWoundedThisNight,
       hadRole: gs.hadRole,
@@ -119,6 +123,7 @@ function LocalGame() {
       na.witchHealUsed,
       na.witchPoisonUsed,
       na.verfluchterConvertedThisNight,
+      na.wolvesSkipNextNight,
       urwolfTransformTargetId,
       na.harterBurscheWoundedThisNight,
       gs.hadRole,
@@ -137,20 +142,27 @@ function LocalGame() {
     if (nightStepIdx < nightSteps.length - 1) {
       const currentStep = nightSteps[nightStepIdx];
       if (currentStep?.id === "wolves") {
-        const wolfAttackProtected =
-          na.nightVictim !== null &&
-          na.nightVictim === na.beschuetzerTarget &&
-          na.nightVictim !== na.verfluchterConvertedThisNight;
-        const converted = wolfAttackProtected ? null : getWolfAttackConvertedVerfluchter(gs.players, na.nightVictim);
-        if (converted) {
-          gs.setPlayers(prev => convertPlayerToWerewolf(prev, converted.id));
-          na.setVerfluchterConvertedThisNight(converted.id);
-          gs.addLog(`⛓️ ${converted.name} war verflucht und wird zum Werwolf.`);
+        if (na.wolvesSkipNextNight) {
+          na.setWolvesSkipNextNight(false);
+          na.setNightVictim(null);
+          na.setUrwolfTransform(null);
+          gs.addLog("🦠 Die Werwölfe sind geschwächt und wählen diese Nacht kein Opfer.");
+        } else {
+          const wolfAttackProtected =
+            na.nightVictim !== null &&
+            na.nightVictim === na.beschuetzerTarget &&
+            na.nightVictim !== na.verfluchterConvertedThisNight;
+          const converted = wolfAttackProtected ? null : getWolfAttackConvertedVerfluchter(gs.players, na.nightVictim);
+          if (converted) {
+            gs.setPlayers(prev => convertPlayerToWerewolf(prev, converted.id));
+            na.setVerfluchterConvertedThisNight(converted.id);
+            gs.addLog(`⛓️ ${converted.name} war verflucht und wird zum Werwolf.`);
+          }
         }
       }
       const effectiveUrwolfTransform = urwolfTransformOverride ?? na.urwolfTransform;
       const nextStep = nightSteps[nightStepIdx + 1];
-      if (nextStep?.id === "dawn" && na.harterBurscheWoundedThisNight === null) {
+      if (!na.wolvesSkipNextNight && nextStep?.id === "dawn" && na.harterBurscheWoundedThisNight === null) {
         const wounded = getHarterBurscheWoundedByWolfAttack(gs.players, na.nightVictim, {
           nachtgastTarget: na.nachtgastTarget,
           beschuetzerTarget: na.beschuetzerTarget,
@@ -199,15 +211,24 @@ function LocalGame() {
     const woundedAtNightStart = na.harterBurscheWoundedThisNight === na.harterBurscheWounded
       ? null
       : na.harterBurscheWounded;
-    const nachtgastMissed = isNachtgastAwayFromWolfAttack(updatedPlayers, na.nightVictim, na.nachtgastTarget);
-    const nachtgastCollateral = getNachtgastCollateralVictim(updatedPlayers, na.nightVictim, na.nachtgastTarget);
+    const wolvesSkippedThisNight = na.wolvesSkipNextNight;
+    const nightVictim = wolvesSkippedThisNight ? null : na.nightVictim;
+    const urwolfTransform = wolvesSkippedThisNight ? null : na.urwolfTransform;
+    if (wolvesSkippedThisNight) {
+      na.setWolvesSkipNextNight(false);
+      na.setNightVictim(null);
+      na.setUrwolfTransform(null);
+      gs.addLog("🦠 Die Werwölfe sind geschwächt und wählen diese Nacht kein Opfer.");
+    }
+    const nachtgastMissed = isNachtgastAwayFromWolfAttack(updatedPlayers, nightVictim, na.nachtgastTarget);
+    const nachtgastCollateral = getNachtgastCollateralVictim(updatedPlayers, nightVictim, na.nachtgastTarget);
     const wolfAttackProtected =
-      na.nightVictim !== null &&
-      na.nightVictim === na.beschuetzerTarget &&
-      na.nightVictim !== na.verfluchterConvertedThisNight;
+      nightVictim !== null &&
+      nightVictim === na.beschuetzerTarget &&
+      nightVictim !== na.verfluchterConvertedThisNight;
     let convertedVerfluchterId = na.verfluchterConvertedThisNight;
     if (convertedVerfluchterId === null && !wolfAttackProtected) {
-      const converted = getWolfAttackConvertedVerfluchter(updatedPlayers, na.nightVictim);
+      const converted = getWolfAttackConvertedVerfluchter(updatedPlayers, nightVictim);
       if (converted) {
         updatedPlayers = convertPlayerToWerewolf(updatedPlayers, converted.id);
         convertedVerfluchterId = converted.id;
@@ -216,19 +237,19 @@ function LocalGame() {
       }
     }
     const verfluchterConverted =
-      !wolfAttackProtected && convertedVerfluchterId !== null && convertedVerfluchterId === na.nightVictim;
+      !wolfAttackProtected && convertedVerfluchterId !== null && convertedVerfluchterId === nightVictim;
     const witchHealApplies = na.witchHealThisRound && !verfluchterConverted && !wolfAttackProtected;
     const wolfVictimAlreadyWoundedHarterBursche =
       woundedAtNightStart !== null &&
-      na.nightVictim === woundedAtNightStart &&
+      nightVictim === woundedAtNightStart &&
       updatedPlayers.some(p => p.id === woundedAtNightStart && p.alive && p.role === "harterbursche");
     const newlyWoundedHarterBursche = na.harterBurscheWoundedThisNight !== null
       ? updatedPlayers.find(p => p.id === na.harterBurscheWoundedThisNight && p.alive) ?? null
-      : getHarterBurscheWoundedByWolfAttack(updatedPlayers, na.nightVictim, {
+      : getHarterBurscheWoundedByWolfAttack(updatedPlayers, nightVictim, {
           nachtgastTarget: na.nachtgastTarget,
           beschuetzerTarget: na.beschuetzerTarget,
           verfluchterConvertedThisNight: convertedVerfluchterId,
-          urwolfTransform: na.urwolfTransform,
+          urwolfTransform,
           witchHealThisRound: witchHealApplies,
           harterBurscheWounded: na.harterBurscheWounded,
         });
@@ -247,41 +268,45 @@ function LocalGame() {
     };
 
     if (wolfAttackProtected) {
-      const v = updatedPlayers.find(p => p.id === na.nightVictim);
+      const v = updatedPlayers.find(p => p.id === nightVictim);
       gs.addLog(`🛡️ Beschützer verhindert den Angriff auf ${v?.name ?? "<unbekannt>"}.`);
     } else if (verfluchterConverted) {
       killNachtgastCollateral();
-    } else if (na.urwolfTransform && na.nightVictim !== null) {
-      const v = updatedPlayers.find(p => p.id === na.nightVictim);
+    } else if (urwolfTransform && nightVictim !== null) {
+      const v = updatedPlayers.find(p => p.id === nightVictim);
       if (nachtgastMissed) {
         gs.addLog(`🐺 Urwolf findet ${v?.name ?? "<unbekannt>"} nicht zu Hause.`);
       } else {
         updatedPlayers = updatedPlayers.map(p =>
-          p.id === na.nightVictim ? { ...p, role: "werwolf" as RoleId } : p,
+          p.id === nightVictim ? { ...p, role: "werwolf" as RoleId } : p,
         );
         gs.addLog(`🐺 Urwolf verwandelt ${v?.name ?? "<unbekannt>"} in einen Werwolf!`);
         na.setUrwolfUsed(true);
         killNachtgastCollateral();
       }
-    } else if (na.nightVictim !== null && nachtgastMissed) {
-      const v = updatedPlayers.find(p => p.id === na.nightVictim);
+    } else if (nightVictim !== null && nachtgastMissed) {
+      const v = updatedPlayers.find(p => p.id === nightVictim);
       gs.addLog(`🐺 Die Werwölfe finden ${v?.name ?? "<unbekannt>"} nicht zu Hause.`);
     } else if (wolfVictimAlreadyWoundedHarterBursche) {
       if (witchHealApplies) {
-        const v = updatedPlayers.find(p => p.id === na.nightVictim);
+        const v = updatedPlayers.find(p => p.id === nightVictim);
         gs.addLog(`🧪 Hexe schützt ${v?.name ?? "<unbekannt>"} vor dem erneuten Angriff.`);
       }
       killNachtgastCollateral();
     } else if (newlyWoundedHarterBursche) {
       killNachtgastCollateral();
-    } else if (na.nightVictim !== null && !witchHealApplies) {
-      const v = updatedPlayers.find(p => p.id === na.nightVictim);
+    } else if (nightVictim !== null && !witchHealApplies) {
+      const v = updatedPlayers.find(p => p.id === nightVictim);
       gs.addLog(`🐺 ${v?.name ?? "<unbekannt>"} wurde von den Werwölfen getötet.`);
-      const r = killPlayer(na.nightVictim, "Werwölfe", updatedPlayers);
+      const r = killPlayer(nightVictim, "Werwölfe", updatedPlayers);
       updatedPlayers = r.players; r.logs.forEach(l => gs.addLog(l)); allTriggers.push(...r.triggers);
+      if (v?.role === "verseuchter") {
+        na.setWolvesSkipNextNight(true);
+        gs.addLog(`🦠 ${v.name} war verseucht. Die Werwölfe müssen in der nächsten Nacht aussetzen.`);
+      }
       killNachtgastCollateral();
-    } else if (na.nightVictim !== null && witchHealApplies) {
-      const v = updatedPlayers.find(p => p.id === na.nightVictim);
+    } else if (nightVictim !== null && witchHealApplies) {
+      const v = updatedPlayers.find(p => p.id === nightVictim);
       gs.addLog(`🧪 Hexe rettet ${v?.name ?? "<unbekannt>"} mit dem Heiltrank!`);
       killNachtgastCollateral();
     }
@@ -501,6 +526,7 @@ function LocalGame() {
     beschuetzerLastTarget: na.beschuetzerLastTarget,
     wildesKindVorbild: na.wildesKindVorbild,
     verfluchterConvertedThisNight: na.verfluchterConvertedThisNight,
+    wolvesSkipNextNight: na.wolvesSkipNextNight,
     harterBurscheWounded: na.harterBurscheWounded,
     harterBurscheWoundedThisNight: na.harterBurscheWoundedThisNight,
     urwolfTransform: na.urwolfTransform,
@@ -543,6 +569,7 @@ function LocalGame() {
     na.setBeschuetzerLastTarget(s.beschuetzerLastTarget ?? null);
     na.setWildesKindVorbild(s.wildesKindVorbild ?? null);
     na.setVerfluchterConvertedThisNight(s.verfluchterConvertedThisNight ?? null);
+    na.setWolvesSkipNextNight(s.wolvesSkipNextNight ?? false);
     na.setHarterBurscheWounded(s.harterBurscheWounded ?? null);
     na.setHarterBurscheWoundedThisNight(s.harterBurscheWoundedThisNight ?? null);
     na.setSeerTarget(s.seerTarget); na.setSeerRevealed(s.seerRevealed);
@@ -572,7 +599,7 @@ function LocalGame() {
     slLoaded, gs.phase, gs.players, gs.round, gs.gamePhase,
     na.nightStepIdx, na.nightVictim, na.urwolfTransform, na.urwolfUsed,
     na.nachtgastTarget, na.beschuetzerTarget, na.beschuetzerLastTarget, na.wildesKindVorbild,
-    na.verfluchterConvertedThisNight,
+    na.verfluchterConvertedThisNight, na.wolvesSkipNextNight,
     na.harterBurscheWounded, na.harterBurscheWoundedThisNight,
     na.witchHealUsed, na.witchPoisonUsed, na.witchHealThisRound,
     na.witchPoisonTarget, na.nightResolved, gs.dayDeaths, gs.dayVoteDone,
@@ -589,6 +616,7 @@ function LocalGame() {
     setRoleCounts({ werwolf: 0, dorfbewohner: 0 }); setAssignMode(null); setManualAssign({});
     gs.setRound(1); gs.setGamePhase("night"); na.resetNightActions();
     na.setUrwolfUsed(false); na.setWitchHealUsed(false); na.setWitchPoisonUsed(false);
+    na.setWolvesSkipNextNight(false);
     na.setBeschuetzerLastTarget(null); na.setHarterBurscheWounded(null); na.setHarterBurscheWoundedThisNight(null);
     na.setWildesKindVorbild(null); na.setAmorPick([]); gs.setLog([]); tq.setTriggerQueue([]);
     gs.setWinner(null); timer.setDayTimer(0); timer.setTimerRunning(false); timer.setTimerDuration(300);
@@ -719,6 +747,7 @@ function LocalGame() {
             wildesKindVorbild={na.wildesKindVorbild}
             setWildesKindVorbild={na.setWildesKindVorbild}
             verfluchterConvertedThisNight={na.verfluchterConvertedThisNight}
+            wolvesSkipNextNight={na.wolvesSkipNextNight}
             harterBurscheWoundedThisNight={na.harterBurscheWoundedThisNight}
             urwolfTransformTarget={urwolfTransformTargetId}
             urwolfTransform={na.urwolfTransform} setUrwolfTransform={na.setUrwolfTransform}
