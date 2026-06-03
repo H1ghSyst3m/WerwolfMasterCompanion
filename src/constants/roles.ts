@@ -18,7 +18,7 @@ export const ROLES: Record<RoleId, Role> = {
       },
       {
         title: "Sonderfälle",
-        text: "Beschützer, Nachtgast, Hexe, Verfluchter, Harter Bursche und Urwolf können den Ausgang des Angriffs verändern.",
+        text: "Beschützer, Nachtgast, Hexe, Verfluchter, Verseuchter, Harter Bursche und Urwolf können den Ausgang des Angriffs verändern.",
       },
     ],
   },
@@ -350,6 +350,32 @@ export const ROLES: Record<RoleId, Role> = {
       {
         title: "Andere Todesarten",
         text: "Abstimmung, Gift, Jägerschuss, Liebestod und andere Nicht-Werwolf-Tode töten den Verfluchten normal.",
+      },
+    ],
+  },
+  verseuchter: {
+    name: "Verseuchter",
+    icon: "🦠",
+    team: "village",
+    cat: "special",
+    unique: true,
+    desc: "Du spielst für das Dorf. Wenn die Werwölfe dich wirklich fressen, werden sie geschwächt und müssen in der nächsten Nacht komplett aussetzen.",
+    rules: [
+      {
+        title: "Werwolf-Angriff",
+        text: "Stirbt der Verseuchte als direktes Hauptopfer der Werwölfe, dürfen die Werwölfe in der nächsten Nacht kein Opfer wählen.",
+      },
+      {
+        title: "Geheimhaltung",
+        text: "Die Gruppe wird nicht öffentlich informiert. Die Spielleitung sieht den Effekt im Protokoll, und die Werwölfe erfahren in ihrer nächsten Nacht, dass sie aussetzen.",
+      },
+      {
+        title: "Blockaden",
+        text: "Wird der Angriff verhindert, geheilt, durch Nachtgast verfehlt oder durch Urwolf in eine Verwandlung geändert, löst der Effekt nicht aus.",
+      },
+      {
+        title: "Andere Todesarten",
+        text: "Abstimmung, Gift, Jägerschuss, Liebestod und andere Nicht-Werwolf-Tode töten den Verseuchten normal und schwächen die Werwölfe nicht.",
       },
     ],
   },

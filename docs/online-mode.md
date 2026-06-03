@@ -217,6 +217,17 @@ Verfluchter conversion is owned by the server:
 - Player snapshots still do not include logs. The converted player sees the updated private role card as `Werwolf (ehem. Verfluchter)`.
 - Reset to lobby and new nights clear `verfluchterConvertedThisNight` with the rest of per-night state.
 
+## Verseuchter Online Behavior
+
+Verseuchter is server-owned in Online Mode:
+
+- When an unprotected, unhealed wolf attack actually kills Verseuchter as the direct main target, the server sets `wolvesSkipNextNight`.
+- The GM snapshot includes `wolvesSkipNextNight` and the GM-only log entries. Player snapshots do not expose the pending skip state or logs.
+- In the next wolves step, the server rejects wolf victim updates, clears any stale victim/Urwolf transform, consumes `wolvesSkipNextNight`, and broadcasts the skip state back to the GM.
+- If the GM resolves the night directly without stepping through wolves, the server still consumes the skip and resolves the night with no wolf victim.
+- Urwolf still receives the normal step after the skip is consumed, but without a wolf victim there is no transform action.
+- Reset to lobby clears `wolvesSkipNextNight`. Normal new-night resets preserve it until the skip is consumed.
+
 ## Blinzelmädchen Online Behavior
 
 Blinzelmädchen has no server-owned action:

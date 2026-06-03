@@ -163,6 +163,16 @@ interface Role {
 - **Beschützer interaction:** If Verfluchter is protected, the wolf attack is prevented and no conversion happens.
 - **Other deaths:** Day vote, Witch poison, Hunter shot, lover chain, and other non-wolf effects kill Verfluchter normally.
 
+### 🦠 Verseuchter (*unique*)
+- **Team:** Village
+- **Night:** No active night action.
+- **Wolf attack:** If wolves directly attack and actually kill Verseuchter as the main victim, `wolvesSkipNextNight` is set to `true`.
+- **Next wolf night:** The wolves wake up, but the wolves step says: "Die Werwölfe sind geschwächt und wählen diese Nacht kein Opfer." No wolf victim can be selected, and the skip is consumed when the wolves step is left or when the GM resolves the night directly.
+- **Urwolf interaction:** While `wolvesSkipNextNight` is active, the Urwolf step still appears like normal, but there is no wolf victim to transform.
+- **Secrecy:** The village is not publicly informed. The GM gets a secret log entry when the effect is created and when the wolves skip. Online player snapshots do not expose `wolvesSkipNextNight`.
+- **No trigger:** Beschützer protection, Witch heal, Nachtgast causing a missed direct attack, Urwolf transformation, Verfluchter conversion, and non-wolf deaths do not trigger the skip.
+- **Other deaths:** Day vote, Witch poison, Hunter shot, lover chain, and other non-wolf effects kill Verseuchter normally.
+
 ### 😉 Blinzelmädchen (*unique*)
 - **Team:** Village
 - **Night:** May secretly blink or peek while the wolves are awake at the table.
@@ -190,8 +200,8 @@ interface Role {
 type RoleId =
   | "werwolf" | "dorfbewohner" | "seher" | "hexe" | "jaeger"
   | "amor" | "narr" | "dorftrottel" | "auraseher" | "detektiv" | "urwolf"
-  | "nachtgast" | "beschuetzer" | "wildeskind" | "verfluchter" | "blinzelmaedchen"
-  | "harterbursche";
+  | "nachtgast" | "beschuetzer" | "wildeskind" | "verfluchter" | "verseuchter"
+  | "blinzelmaedchen" | "harterbursche";
 ```
 
 ---
@@ -200,7 +210,7 @@ type RoleId =
 
 | Role | Night Step Active Condition |
 |------|-----------------------------|
-| werwolf | Always (`active: true`) |
+| werwolf | Always (`active: true`; if `wolvesSkipNextNight` is true, no victim is selected) |
 | amor | `hadRole("amor") && round === 1` |
 | nachtgast | `aliveWithRole("nachtgast")` |
 | beschuetzer | `aliveWithRole("beschuetzer")` |
@@ -215,5 +225,6 @@ type RoleId =
 | narr | No night step |
 | dorftrottel | No night step |
 | verfluchter | No active night step; GM notification appears only when `verfluchterConvertedThisNight !== null` |
+| verseuchter | No active night step; sets `wolvesSkipNextNight` only after a true wolf kill |
 | blinzelmaedchen | No night step |
 | harterbursche | No active night step; GM notification appears only when `harterBurscheWoundedThisNight !== null` |

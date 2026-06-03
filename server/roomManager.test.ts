@@ -5,7 +5,9 @@ import {
   assignManualRoles,
   autoFillVillagers,
   buildRolePool,
+  createInitialNightActions,
   nonVillagerRoleTotal,
+  resetNightActions,
   roleCountTotal,
 } from "../src/domain/gameState";
 import { checkWin, getTeam, getUrwolfTransformTarget } from "../src/logic/gameLogic";
@@ -155,6 +157,22 @@ function harterBurschePlayers(includeNachtgast = false): Player[] {
 function createRoomWithHarterBursche(includeNachtgast = false) {
   const { manager } = createRoomWithPlayers();
   send(manager, "gm", { type: "gm:setPlayers", payload: { players: harterBurschePlayers(includeNachtgast) } });
+  return manager;
+}
+
+function verseuchterPlayers(wolfRole: "werwolf" | "urwolf" = "werwolf"): Player[] {
+  return [
+    { id: 1, name: wolfRole === "urwolf" ? "Urwolf" : "Wolf", role: wolfRole, originalRole: wolfRole, alive: true, lover: null },
+    { id: 2, name: "Verseuchter", role: "verseuchter", originalRole: "verseuchter", alive: true, lover: null },
+    { id: 3, name: "Dorf 1", role: "dorfbewohner", originalRole: "dorfbewohner", alive: true, lover: null },
+    { id: 4, name: "Dorf 2", role: "dorfbewohner", originalRole: "dorfbewohner", alive: true, lover: null },
+    { id: 5, name: "Dorf 3", role: "dorfbewohner", originalRole: "dorfbewohner", alive: true, lover: null },
+  ];
+}
+
+function createRoomWithVerseuchter(wolfRole: "werwolf" | "urwolf" = "werwolf") {
+  const { manager } = createRoomWithPlayers();
+  send(manager, "gm", { type: "gm:setPlayers", payload: { players: verseuchterPlayers(wolfRole) } });
   return manager;
 }
 
@@ -700,6 +718,36 @@ describe("RoomManager", () => {
       .toEqual(["sleep", "wolves", "urwolf", "seer", "dawn"]);
     expect(buildNightSteps({ ...baseParams, urwolfTransformTarget: 3 }).map(step => step.id))
       .toEqual(["sleep", "wolves", "urwolf", "urwolfinfo", "seer", "dawn"]);
+  });
+
+  it("keeps Urwolf visible while the wolves are weakened", () => {
+    const steps = buildNightSteps({
+      round: 1,
+      urwolfUsed: false,
+      witchHealUsed: false,
+      witchPoisonUsed: false,
+      verfluchterConvertedThisNight: null,
+      wolvesSkipNextNight: true,
+      urwolfTransformTarget: 3,
+      hadRole: (roleId: RoleId) => roleId === "urwolf" || roleId === "seher",
+      aliveWithRole: (roleId: RoleId) => roleId === "urwolf" || roleId === "seher",
+      amorPick: [],
+    });
+
+    expect(steps.map(step => step.id)).toEqual(["sleep", "wolves", "urwolf", "seer", "dawn"]);
+    expect(steps.find(step => step.id === "wolves")?.desc)
+      .toBe("Die Werwölfe sind geschwächt und wählen diese Nacht kein Opfer.");
+  });
+
+  it("preserves the pending wolf skip through normal night resets", () => {
+    const reset = resetNightActions({
+      ...createInitialNightActions(),
+      nightVictim: 2,
+      wolvesSkipNextNight: true,
+    });
+
+    expect(reset.wolvesSkipNextNight).toBe(true);
+    expect(reset.nightVictim).toBeNull();
   });
 
   it("applies an Urwolf transform override while advancing online night steps", () => {
@@ -1361,6 +1409,161 @@ describe("RoomManager", () => {
     expect(snapshot.harterBurscheWounded).toBeNull();
   });
 
+  it("weakens wolves for the next night when they kill Verseuchter", () => {
+    const { manager } = createRoomWithPlayers();
+    send(manager, "gm", { type: "gm:setPlayers", payload: { players: verseuchterPlayers() } });
+    send(manager, "gm", { type: "gm:updateNightAction", payload: { nightVictim: 2 } });
+
+    const messages = send(manager, "gm", { type: "gm:resolveNight" });
+    const snapshot = latestGmSnapshot(messages);
+    const verseuchterPlayerMessage = messages.find(
+      message => message.clientId === "p1" && message.message.type === "snapshot" && message.message.snapshot.view === "player",
+    )?.message;
+
+    expect(snapshot.players.find(player => player.id === 2)?.alive).toBe(false);
+    expect(snapshot.dayDeaths.map(player => player.name)).toEqual(["Verseuchter"]);
+    expect(snapshot.wolvesSkipNextNight).toBe(true);
+    expect(snapshot.log.map(entry => entry.text)).toContain("🦠 Verseuchter war verseucht. Die Werwölfe müssen in der nächsten Nacht aussetzen.");
+    expect(verseuchterPlayerMessage).toBeTruthy();
+    if (verseuchterPlayerMessage?.type === "snapshot" && verseuchterPlayerMessage.snapshot.view === "player") {
+      expect(verseuchterPlayerMessage.snapshot).not.toHaveProperty("wolvesSkipNextNight");
+    }
+  });
+
+  it("consumes the Verseuchter skip without allowing a wolf kill or Urwolf transform", () => {
+    const manager = createRoomWithVerseuchter("urwolf");
+    send(manager, "gm", { type: "gm:updateNightAction", payload: { nightVictim: 2 } });
+    send(manager, "gm", { type: "gm:resolveNight" });
+    send(manager, "gm", { type: "gm:startDay" });
+    send(manager, "gm", { type: "gm:startNight" });
+
+    send(manager, "gm", { type: "gm:updateNightAction", payload: { nightVictim: 3, urwolfTransform: true } });
+    let snapshot = latestGmSnapshot(send(manager, "gm", { type: "gm:advanceNightStep" }));
+    expect(snapshot.nightStepIdx).toBe(1);
+    expect(snapshot.nightVictim).toBeNull();
+    expect(snapshot.urwolfTransform).toBe(true);
+    expect(snapshot.wolvesSkipNextNight).toBe(true);
+
+    snapshot = latestGmSnapshot(send(manager, "gm", { type: "gm:advanceNightStep" }));
+    expect(snapshot.wolvesSkipNextNight).toBe(false);
+    expect(snapshot.nightVictim).toBeNull();
+    expect(snapshot.urwolfTransform).toBeNull();
+    expect(snapshot.nightStepIdx).toBe(2);
+    expect(snapshot.urwolfUsed).toBe(false);
+    expect(snapshot.log.map(entry => entry.text)).toContain("🦠 Die Werwölfe sind geschwächt und wählen diese Nacht kein Opfer.");
+
+    snapshot = latestGmSnapshot(send(manager, "gm", { type: "gm:advanceNightStep" }));
+    expect(snapshot.nightStepIdx).toBe(3);
+    expect(snapshot.urwolfUsed).toBe(false);
+    expect(snapshot.nightVictim).toBeNull();
+    expect(snapshot.urwolfTransform).toBeNull();
+
+    snapshot = latestGmSnapshot(send(manager, "gm", { type: "gm:resolveNight" }));
+    expect(snapshot.players.find(player => player.id === 3)?.alive).toBe(true);
+    expect(snapshot.players.find(player => player.id === 3)?.role).toBe("dorfbewohner");
+    expect(snapshot.dayDeaths).toEqual([]);
+  });
+
+  it("continues through Urwolf before the next role after the Verseuchter skip", () => {
+    const { manager } = createRoomWithPlayers();
+    send(manager, "gm", {
+      type: "gm:setPlayers",
+      payload: {
+        players: verseuchterPlayers("urwolf").map(player =>
+          player.id === 3 ? { ...player, role: "seher" as RoleId, originalRole: "seher" as RoleId } : player,
+        ),
+      },
+    });
+    send(manager, "gm", { type: "gm:updateNightAction", payload: { nightVictim: 2 } });
+    send(manager, "gm", { type: "gm:resolveNight" });
+    send(manager, "gm", { type: "gm:startDay" });
+    send(manager, "gm", { type: "gm:startNight" });
+    send(manager, "gm", { type: "gm:advanceNightStep" });
+
+    const snapshot = latestGmSnapshot(send(manager, "gm", { type: "gm:advanceNightStep" }));
+    const steps = buildNightSteps({
+      round: snapshot.round,
+      urwolfUsed: snapshot.urwolfUsed,
+      witchHealUsed: snapshot.witchHealUsed,
+      witchPoisonUsed: snapshot.witchPoisonUsed,
+      verfluchterConvertedThisNight: snapshot.verfluchterConvertedThisNight,
+      wolvesSkipNextNight: snapshot.wolvesSkipNextNight,
+      urwolfTransformTarget: getUrwolfTransformTarget(snapshot.players, {
+        nightVictim: snapshot.nightVictim,
+        nachtgastTarget: snapshot.nachtgastTarget,
+        beschuetzerTarget: snapshot.beschuetzerTarget,
+        verfluchterConvertedThisNight: snapshot.verfluchterConvertedThisNight,
+        urwolfTransform: snapshot.urwolfTransform,
+      })?.id ?? null,
+      harterBurscheWoundedThisNight: snapshot.harterBurscheWoundedThisNight,
+      hadRole: roleId => snapshot.players.some(player => player.originalRole === roleId),
+      aliveWithRole: roleId => snapshot.players.some(player => player.alive && player.role === roleId),
+      amorPick: snapshot.amorPick,
+    });
+
+    expect(snapshot.wolvesSkipNextNight).toBe(false);
+    expect(steps[snapshot.nightStepIdx]?.id).toBe("urwolf");
+
+    const nextSnapshot = latestGmSnapshot(send(manager, "gm", { type: "gm:advanceNightStep" }));
+    const nextSteps = buildNightSteps({
+      round: nextSnapshot.round,
+      urwolfUsed: nextSnapshot.urwolfUsed,
+      witchHealUsed: nextSnapshot.witchHealUsed,
+      witchPoisonUsed: nextSnapshot.witchPoisonUsed,
+      verfluchterConvertedThisNight: nextSnapshot.verfluchterConvertedThisNight,
+      wolvesSkipNextNight: nextSnapshot.wolvesSkipNextNight,
+      urwolfTransformTarget: getUrwolfTransformTarget(nextSnapshot.players, {
+        nightVictim: nextSnapshot.nightVictim,
+        nachtgastTarget: nextSnapshot.nachtgastTarget,
+        beschuetzerTarget: nextSnapshot.beschuetzerTarget,
+        verfluchterConvertedThisNight: nextSnapshot.verfluchterConvertedThisNight,
+        urwolfTransform: nextSnapshot.urwolfTransform,
+      })?.id ?? null,
+      harterBurscheWoundedThisNight: nextSnapshot.harterBurscheWoundedThisNight,
+      hadRole: roleId => nextSnapshot.players.some(player => player.originalRole === roleId),
+      aliveWithRole: roleId => nextSnapshot.players.some(player => player.alive && player.role === roleId),
+      amorPick: nextSnapshot.amorPick,
+    });
+
+    expect(nextSnapshot.urwolfUsed).toBe(false);
+    expect(nextSnapshot.nightVictim).toBeNull();
+    expect(nextSnapshot.urwolfTransform).toBeNull();
+    expect(nextSteps[nextSnapshot.nightStepIdx]?.id).toBe("seer");
+  });
+
+  it("consumes the Verseuchter skip when the GM resolves the night directly", () => {
+    const manager = createRoomWithVerseuchter();
+    send(manager, "gm", { type: "gm:updateNightAction", payload: { nightVictim: 2 } });
+    send(manager, "gm", { type: "gm:resolveNight" });
+    send(manager, "gm", { type: "gm:startDay" });
+    send(manager, "gm", { type: "gm:startNight" });
+
+    const snapshot = latestGmSnapshot(send(manager, "gm", { type: "gm:resolveNight" }));
+
+    expect(snapshot.wolvesSkipNextNight).toBe(false);
+    expect(snapshot.nightVictim).toBeNull();
+    expect(snapshot.dayDeaths).toEqual([]);
+  });
+
+  it("does not weaken wolves when Verseuchter is saved, transformed, protected, or killed by the village", () => {
+    const healed = createRoomWithVerseuchter();
+    send(healed, "gm", { type: "gm:updateNightAction", payload: { nightVictim: 2, witchHealThisRound: true } });
+    expect(latestGmSnapshot(send(healed, "gm", { type: "gm:resolveNight" })).wolvesSkipNextNight).toBe(false);
+
+    const protectedManager = createRoomWithBeschuetzer("werwolf", "verseuchter");
+    send(protectedManager, "gm", { type: "gm:updateNightAction", payload: { beschuetzerTarget: 3, nightVictim: 3 } });
+    expect(latestGmSnapshot(send(protectedManager, "gm", { type: "gm:resolveNight" })).wolvesSkipNextNight).toBe(false);
+
+    const transformed = createRoomWithVerseuchter("urwolf");
+    send(transformed, "gm", { type: "gm:updateNightAction", payload: { nightVictim: 2, urwolfTransform: true } });
+    const transformedSnapshot = latestGmSnapshot(send(transformed, "gm", { type: "gm:resolveNight" }));
+    expect(transformedSnapshot.players.find(player => player.id === 2)?.role).toBe("werwolf");
+    expect(transformedSnapshot.wolvesSkipNextNight).toBe(false);
+
+    const voted = createRoomWithVerseuchter();
+    expect(latestGmSnapshot(send(voted, "gm", { type: "gm:dayVote", payload: { playerId: 2 } })).wolvesSkipNextNight).toBe(false);
+  });
+
   it("converts Verfluchter when wolves attack instead of killing them", () => {
     const manager = createRoomWithVerfluchter();
 
@@ -1541,14 +1744,16 @@ describe("RoomManager", () => {
       beschuetzer: 1,
       wildeskind: 1,
       verfluchter: 1,
+      verseuchter: 1,
       blinzelmaedchen: 1,
     } as unknown as RoleCounts;
     const pool = buildRolePool(roleCounts);
     expect(ROLES.beschuetzer).toMatchObject({ team: "village", cat: "special", unique: true });
     expect(ROLES.wildeskind).toMatchObject({ team: "village", cat: "special", unique: true });
     expect(ROLES.verfluchter).toMatchObject({ team: "village", cat: "special", unique: true });
+    expect(ROLES.verseuchter).toMatchObject({ team: "village", cat: "special", unique: true });
     expect(ROLES.blinzelmaedchen).toMatchObject({ team: "village", cat: "special", unique: true });
-    expect(pool).toEqual(["werwolf", "nachtgast", "beschuetzer", "wildeskind", "verfluchter", "blinzelmaedchen"]);
+    expect(pool).toEqual(["werwolf", "nachtgast", "beschuetzer", "wildeskind", "verfluchter", "verseuchter", "blinzelmaedchen"]);
     expect(roleCountTotal(roleCounts)).toBe(pool.length);
   });
 
@@ -1560,12 +1765,14 @@ describe("RoomManager", () => {
     expect(isClientMessage({ type: "gm:advanceNightStep", payload: { urwolfTransform: true } })).toBe(true);
     expect(isClientMessage({ type: "gm:advanceNightStep", payload: { nightVictim: 2 } })).toBe(false);
     expect(isClientMessage({ type: "gm:updateRoleCounts", payload: { roleCounts: { werwolf: -1 } } })).toBe(false);
+    expect(isClientMessage({ type: "gm:updateRoleCounts", payload: { roleCounts: { verseuchter: 1 } } })).toBe(true);
     expect(isClientMessage({ type: "gm:updateRoleCounts", payload: { roleCounts: { blinzelmaedchen: 1 } } })).toBe(true);
     expect(isClientMessage({ type: "gm:updateNightAction", payload: { nachtgastTarget: 2 } })).toBe(true);
     expect(isClientMessage({ type: "gm:updateNightAction", payload: { nachtgastTarget: -1 } })).toBe(false);
     expect(isClientMessage({ type: "gm:updateNightAction", payload: { beschuetzerTarget: 2 } })).toBe(true);
     expect(isClientMessage({ type: "gm:updateNightAction", payload: { wildesKindVorbild: 2 } })).toBe(true);
     expect(isClientMessage({ type: "gm:updateNightAction", payload: { wildesKindVorbild: -1 } })).toBe(false);
+    expect(isClientMessage({ type: "gm:updateNightAction", payload: { wolvesSkipNextNight: true } })).toBe(false);
     expect(isClientMessage({ type: "gm:updateNightAction", payload: { beschuetzerLastTarget: 2 } })).toBe(false);
     expect(isClientMessage({ type: "gm:setPlayers", payload: { players: [{ id: "bad" }] } })).toBe(false);
     expect(isClientMessage({
@@ -1578,6 +1785,7 @@ describe("RoomManager", () => {
       },
     })).toBe(false);
     expect(isClientMessage({ type: "gm:setManualAssign", payload: { manualAssign: { "1": undefined } } })).toBe(true);
+    expect(isClientMessage({ type: "gm:setManualAssign", payload: { manualAssign: { "1": "verseuchter" } } })).toBe(true);
     expect(isClientMessage({ type: "gm:setManualAssign", payload: { manualAssign: { "1": "blinzelmaedchen" } } })).toBe(true);
     expect(isClientMessage({ type: "player:joinRoom", payload: { roomCode: "ABC123", name: "Alex" } })).toBe(true);
   });

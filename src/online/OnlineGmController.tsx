@@ -85,13 +85,15 @@ export function OnlineGmController({ snapshot, sendCommand }: OnlineGmController
 
   const players = snapshot.players;
   const urwolfTransformTarget = useMemo(
-    () => getUrwolfTransformTarget(players, {
-      nightVictim: snapshot.nightVictim,
-      nachtgastTarget: snapshot.nachtgastTarget,
-      beschuetzerTarget: snapshot.beschuetzerTarget,
-      verfluchterConvertedThisNight: snapshot.verfluchterConvertedThisNight,
-      urwolfTransform: snapshot.urwolfTransform,
-    }),
+    () => snapshot.wolvesSkipNextNight
+      ? null
+      : getUrwolfTransformTarget(players, {
+          nightVictim: snapshot.nightVictim,
+          nachtgastTarget: snapshot.nachtgastTarget,
+          beschuetzerTarget: snapshot.beschuetzerTarget,
+          verfluchterConvertedThisNight: snapshot.verfluchterConvertedThisNight,
+          urwolfTransform: snapshot.urwolfTransform,
+        }),
     [
       players,
       snapshot.nightVictim,
@@ -99,6 +101,7 @@ export function OnlineGmController({ snapshot, sendCommand }: OnlineGmController
       snapshot.beschuetzerTarget,
       snapshot.verfluchterConvertedThisNight,
       snapshot.urwolfTransform,
+      snapshot.wolvesSkipNextNight,
     ],
   );
   const urwolfTransformTargetId = urwolfTransformTarget?.id ?? null;
@@ -138,6 +141,7 @@ export function OnlineGmController({ snapshot, sendCommand }: OnlineGmController
       witchHealUsed: snapshot.witchHealUsed,
       witchPoisonUsed: snapshot.witchPoisonUsed,
       verfluchterConvertedThisNight: snapshot.verfluchterConvertedThisNight,
+      wolvesSkipNextNight: snapshot.wolvesSkipNextNight,
       urwolfTransformTarget: urwolfTransformTargetId,
       harterBurscheWoundedThisNight: snapshot.harterBurscheWoundedThisNight,
       hadRole: roleId => players.some(player => player.originalRole === roleId),
@@ -150,6 +154,7 @@ export function OnlineGmController({ snapshot, sendCommand }: OnlineGmController
       snapshot.witchHealUsed,
       snapshot.witchPoisonUsed,
       snapshot.verfluchterConvertedThisNight,
+      snapshot.wolvesSkipNextNight,
       urwolfTransformTargetId,
       snapshot.harterBurscheWoundedThisNight,
       snapshot.amorPick,
@@ -406,6 +411,7 @@ export function OnlineGmController({ snapshot, sendCommand }: OnlineGmController
             wildesKindVorbild={snapshot.wildesKindVorbild}
             setWildesKindVorbild={id => updateNightAction({ wildesKindVorbild: id })}
             verfluchterConvertedThisNight={snapshot.verfluchterConvertedThisNight}
+            wolvesSkipNextNight={snapshot.wolvesSkipNextNight}
             harterBurscheWoundedThisNight={snapshot.harterBurscheWoundedThisNight}
             urwolfTransformTarget={urwolfTransformTargetId}
             urwolfTransform={snapshot.urwolfTransform}

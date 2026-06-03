@@ -55,6 +55,7 @@ All state specific to a single night's actions. Per-night state is cleared via `
 | `beschuetzerLastTarget` | `number \| null` | ID of the player Beschützer protected on the previous resolved night |
 | `wildesKindVorbild` | `number \| null` | ID of the player chosen as Wildes Kind's role model in night 1 |
 | `verfluchterConvertedThisNight` | `number \| null` | ID of a Verfluchter converted by wolves this night, used for the GM notification step and same-night role effects |
+| `wolvesSkipNextNight` | `boolean` | Whether wolves must skip their next wolves step after killing Verseuchter |
 | `harterBurscheWounded` | `number \| null` | ID of a Harter Bursche carrying a delayed wolf-attack wound |
 | `harterBurscheWoundedThisNight` | `number \| null` | ID of a Harter Bursche newly wounded this night, used for the GM notification step |
 | `urwolfTransform` | `boolean \| null` | Whether Urwolf chose to transform this night |
@@ -72,7 +73,7 @@ All state specific to a single night's actions. Per-night state is cleared via `
 | `amorPick` | `number[]` | IDs of the two lovers, set in night 1 only |
 | `nightResolved` | `boolean` | Whether `resolveNight()` has run for this night |
 
-`resetNightActions()` resets all per-night fields except `beschuetzerLastTarget`, `wildesKindVorbild`, `harterBurscheWounded`, `urwolfUsed`, `witchHealUsed`, `witchPoisonUsed`, and `amorPick`, which persist across nights.
+`resetNightActions()` resets all per-night fields except `beschuetzerLastTarget`, `wildesKindVorbild`, `wolvesSkipNextNight`, `harterBurscheWounded`, `urwolfUsed`, `witchHealUsed`, `witchPoisonUsed`, and `amorPick`, which persist across nights.
 
 ### `useTriggerQueue` - `src/hooks/useTriggerQueue.ts`
 

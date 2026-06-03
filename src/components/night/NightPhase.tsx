@@ -39,6 +39,7 @@ interface NightPhaseProps {
   wildesKindVorbild: number | null;
   setWildesKindVorbild: (id: number) => void;
   verfluchterConvertedThisNight: number | null;
+  wolvesSkipNextNight: boolean;
   harterBurscheWoundedThisNight: number | null;
   urwolfTransformTarget: number | null;
   urwolfTransform: boolean | null;
@@ -87,6 +88,7 @@ export function NightPhase({
   wildesKindVorbild,
   setWildesKindVorbild,
   verfluchterConvertedThisNight,
+  wolvesSkipNextNight,
   harterBurscheWoundedThisNight,
   urwolfTransformTarget,
   urwolfTransform,
@@ -283,6 +285,7 @@ export function NightPhase({
           setNightVictim={setNightVictim}
           advanceNightStep={advanceNightStep}
           getEffectiveTeam={getEffectiveTeam}
+          wolvesSkipNextNight={wolvesSkipNextNight}
         />
       )}
 

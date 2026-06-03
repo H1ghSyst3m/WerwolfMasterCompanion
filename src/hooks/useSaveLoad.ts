@@ -75,6 +75,8 @@ function isSaveState(v: unknown): v is SaveState {
     !Number.isInteger(s.verfluchterConvertedThisNight) ||
     s.verfluchterConvertedThisNight < 0
   )) return false;
+  if (s.wolvesSkipNextNight === undefined) s.wolvesSkipNextNight = false;
+  if (typeof s.wolvesSkipNextNight !== "boolean") return false;
   if (s.harterBurscheWounded === undefined) s.harterBurscheWounded = null;
   if (s.harterBurscheWounded !== null && (
     typeof s.harterBurscheWounded !== "number" ||

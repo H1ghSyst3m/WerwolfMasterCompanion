@@ -84,9 +84,12 @@ export function NightStepUrwolf({
   }
 
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 text-center">
-      <p className="text-gray-400">Kein Opfer gewählt. Überspringen.</p>
-      <Btn onClick={() => advanceNightStep()} cls="bg-indigo-600 hover:bg-indigo-500 text-white w-full mt-3" size="lg">
+    <div className="space-y-3">
+      <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4 text-center">
+        <p className="text-gray-500 text-sm">💤 Keine Aktion. Es gibt kein Werwolf-Opfer.</p>
+        <p className="text-gray-600 text-xs mt-1">Kurz warten, dann weiter, um den Ablauf einzuhalten.</p>
+      </div>
+      <Btn onClick={() => advanceNightStep()} cls="bg-indigo-600 hover:bg-indigo-500 text-white w-full" size="lg">
         Weiter →
       </Btn>
     </div>
